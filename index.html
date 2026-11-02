@@ -122,10 +122,17 @@ h1.t.xl{font-size:30px; line-height:1.15; letter-spacing:-.5px}
 .nav button[aria-current="page"]{color:var(--green); font-weight:800}
 
 /* Reader */
-.rtop{flex:none; padding:48px 16px 10px; background:var(--bg); display:flex; flex-direction:column; gap:10px; border-bottom:1px solid var(--line)}
+.rtop{flex:none; padding:44px 16px 10px; background:var(--bg); display:flex; flex-direction:column; gap:8px; border-bottom:1px solid var(--line)}
 .rtop .r1{display:flex; align-items:center; gap:4px}
-.rtop .r1 button{display:flex; align-items:center; gap:4px; min-height:44px; padding:0 10px 0 4px; border:none; background:none; color:var(--green); font:700 14px var(--font); cursor:pointer}
-.rtop .r1 span{margin-left:auto; font-size:12.5px; font-weight:600; color:var(--muted); padding-right:8px}
+.rtop .r1 button{display:flex; align-items:center; gap:4px; min-height:40px; padding:0 8px 0 2px; border:none; background:none; color:var(--green); font:700 14px var(--font); cursor:pointer}
+.rtop .r1 span{margin-left:auto; font-size:12.5px; font-weight:700; color:var(--muted); padding-right:4px}
+.pdf-ext-btn{width:36px; height:36px; border-radius:10px; background:var(--card); border:1.5px solid var(--line); display:flex; align-items:center; justify-content:center; color:var(--green); text-decoration:none; flex:none}
+.pdf-ext-btn:hover{background:var(--green-lt); border-color:var(--green)}
+.modetabs{display:flex; background:var(--track); border-radius:10px; padding:2px; gap:2px}
+.modetabs button{flex:1; border:none; background:none; border-radius:8px; padding:6px 8px; font:700 12px var(--font); color:var(--muted); cursor:pointer; text-align:center; transition:background .15s,color .15s}
+.modetabs button[aria-pressed="true"]{background:#fff; color:var(--green-dk); box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.pdf-box{flex:1; position:relative; min-height:0; width:100%; height:100%; background:#2A2D30; overflow:hidden}
+.pdf-iframe{width:100%; height:100%; border:none; display:block}
 .secnav{display:flex; gap:8px; overflow-x:auto; padding:2px 24px 4px; margin:0 -24px; scrollbar-width:none}
 .secnav::-webkit-scrollbar{display:none}
 .secnav button{flex:none; min-height:36px; padding:0 12px; border-radius:999px; border:1.5px solid var(--line-in); background:#fff; font:700 12.5px var(--font); color:var(--green-dk); cursor:pointer}
@@ -216,7 +223,7 @@ h1.t.xl{font-size:30px; line-height:1.15; letter-spacing:-.5px}
 
 /* ================= Data ================= */
 const BOOKS = [
-{id:1, title:"Mengenal Sarapan dan Manfaatnya", tag:"Kenapa sarapan penting untuk tenaga, semangat, dan konsentrasi belajar.", min:"4",
+{id:1, title:"Mengenal Sarapan dan Manfaatnya", pdf:"Buku-1-Mengenal-Sarapan-dan-Manfaatnya.pdf", tag:"Kenapa sarapan penting untuk tenaga, semangat, dan konsentrasi belajar.", min:"4",
  src:"Sumber utama: Buku Menu Sarapan Aksi Bergizi (Kemenkes RI dan UNICEF, 2024), Bab 1, halaman 1–2.",
  goals:["Menjelaskan arti sarapan","Memahami mengapa remaja perlu sarapan","Mengenal 6 manfaat sarapan dan dampak jika dilewatkan"],
  story:{l:"Cerita pagi Rani", t:"Alarm berbunyi jam 05.30. Rani mandi, memakai seragam, lalu buru-buru memesan ojek online supaya tidak terlambat. \"Nanti beli jajan di kantin saja,\" pikirnya. Jam 09.30, pelajaran matematika baru separuh jalan, tapi perut Rani sudah keroncongan dan konsentrasinya buyar. Ia hanya memikirkan satu hal: makan apa saja yang ada di kantin."},
@@ -229,7 +236,7 @@ const BOOKS = [
  sum:["Sarapan adalah makan pagi sebelum beraktivitas.","Remaja sedang tumbuh sehingga kebutuhan gizinya meningkat.","Sarapan membantu tenaga, semangat, dan konsentrasi belajar.","Sarapan membantu mengurangi kebiasaan jajan yang kurang sehat.","Siapkan bahan dan rencanakan menu sejak malam sebelumnya."],
  msg:"Jangan melewatkan sarapan. Awali aktivitas pagi dengan makanan yang bergizi dan beragam."},
 
-{id:2, title:"Mengenal Sarapan Bergizi Seimbang", tag:"Kenali empat komponen menu dan manfaat pangan lokal yang beragam.", min:"3",
+{id:2, title:"Mengenal Sarapan Bergizi Seimbang", pdf:"Buku-2-Mengenal-Sarapan-Bergizi-Seimbang.pdf", tag:"Kenali empat komponen menu dan manfaat pangan lokal yang beragam.", min:"3",
  src:"Sumber utama: Buku Menu Sarapan Aksi Bergizi (Kemenkes RI dan UNICEF, 2024), Bab 2, halaman 3–5.",
  goals:["Menjelaskan arti sarapan bergizi seimbang","Menyebutkan 4 komponen menu sarapan","Memahami pentingnya keragaman dan pangan lokal"],
  story:{l:"Cerita pagi Dimas", t:"Dimas selalu sarapan. Tapi menunya itu-itu saja: sepiring nasi dan kerupuk, kadang hanya mi instan. Perutnya kenyang, tapi menu itu belum lengkap. Sarapan yang baik bukan cuma soal kenyang. Ada empat komponen yang saling melengkapi. Yuk, kenali satu per satu."},
@@ -241,7 +248,7 @@ const BOOKS = [
  sum:["Sarapan bergizi seimbang mengandung zat gizi dalam jenis dan jumlah yang sesuai kebutuhan.","Ada 4 komponen: makanan pokok, lauk-pauk, sayur, dan buah.","Lauk bisa hewani maupun nabati, dan boleh dikombinasikan.","Makanan pokok tidak harus nasi.","Bahan pangan lokal mudah didapat dan bisa diolah jadi menu menarik."],
  msg:"Lengkapi sarapan dengan makanan pokok, lauk-pauk, sayur, dan buah agar menu lebih beragam."},
 
-{id:3, title:"Mengenal Sumber Zat Gizi dalam Sarapan", tag:"Dari karbohidrat sampai vitamin: temukan gizi di setiap piring sarapan.", min:"4",
+{id:3, title:"Mengenal Sumber Zat Gizi dalam Sarapan", pdf:"Buku-3-Sumber-Zat-Gizi-dalam-Sarapan.pdf", tag:"Dari karbohidrat sampai vitamin: temukan gizi di setiap piring sarapan.", min:"4",
  src:"Sumber utama: Buku Menu Sarapan Aksi Bergizi (Kemenkes RI dan UNICEF, 2024), Bab 3 halaman 7–12 dan Bab 6 halaman 30–35.",
  goals:["Mengenali bahan makanan sumber karbohidrat","Membedakan protein hewani dan nabati","Memahami peran sayur, buah, dan minuman"],
  story:{l:"Detektif gizi", t:"Bayangkan sarapanmu adalah sebuah misteri. Di balik sepiring nasi, telur, tumis bayam, dan pepaya, ada berbagai zat gizi yang bekerja untuk tubuhmu. Mari berperan sebagai detektif gizi dan temukan siapa memberi apa."},
@@ -253,7 +260,7 @@ const BOOKS = [
  sum:["Makanan pokok adalah sumber karbohidrat: nasi, ubi, mi, bihun, kentang, singkong, roti, jagung.","Protein berasal dari hewan (ayam, ikan, telur) dan tumbuhan (tempe, tahu, kacang-kacangan).","Sayur dan buah adalah sumber vitamin, mineral, dan serat.","Utamakan air putih dan batasi minuman bergula."],
  msg:"Lengkapi menu sarapan dengan sumber karbohidrat, protein, sayur, dan buah, serta pilih minuman yang sesuai."},
 
-{id:4, title:"Menyusun Menu Sarapan Bergizi Seimbang", tag:"Padukan bahan makanan menjadi menu sarapan yang lengkap dan menarik.", min:"4",
+{id:4, title:"Menyusun Menu Sarapan Bergizi Seimbang", pdf:"Buku-4-Menyusun-Menu-Sarapan-Bergizi-Seimbang.pdf", tag:"Padukan bahan makanan menjadi menu sarapan yang lengkap dan menarik.", min:"4",
  src:"Sumber utama: Buku Menu Sarapan Aksi Bergizi (Kemenkes RI dan UNICEF, 2024), Bab 2 halaman 3–6 dan Bab 7 halaman 38–77.",
  goals:["Menyusun menu dari 4 komponen utama","Membuat variasi menu dari bahan lokal","Memahami standar porsi sarapan"],
  story:{l:"Rumus sarapan", t:"Makanan pokok + Lauk + Sayur + Buah = Sarapan bergizi seimbang. Itu saja rumusnya. Sisanya tinggal berkreasi dengan bahan yang ada di dapurmu, warung dekat rumah, atau pasar di sekitarmu."},
@@ -265,7 +272,7 @@ const BOOKS = [
  sum:["Rumus menu: makanan pokok + lauk + sayur + buah.","Variasi menu membuat sarapan tidak membosankan.","Bahan pangan lokal mudah didapat dan mudah diolah.","Standar sarapan di buku: pokok 200 g, lauk 70 g, sayur 50 g, buah 75 g.","Porsi disesuaikan dengan kebutuhan masing-masing dan kebutuhan makan sehari secara keseluruhan.","Rencanakan menu untuk beberapa hari atau seminggu."],
  msg:"Susun menu sarapan yang beragam, mudah disiapkan, memakai bahan pangan lokal, dan memperhatikan kebutuhan porsi."},
 
-{id:5, title:"Merencanakan Sarapan dengan Breakfast Planner", tag:"Rencanakan, catat, dan evaluasi sarapanmu langkah demi langkah.", min:"4",
+{id:5, title:"Merencanakan Sarapan dengan Breakfast Planner", pdf:"Buku-5-Merencanakan-Sarapan-dengan-Breakfast-Planner.pdf", tag:"Rencanakan, catat, dan evaluasi sarapanmu langkah demi langkah.", min:"4",
  src:"Sumber utama: Buku Menu Sarapan Aksi Bergizi (Kemenkes RI dan UNICEF, 2024), Bab 2 halaman 4–6. Fitur perencanaan dan pencatatan mengikuti fungsi aplikasi Digital Breakfast Planner.",
  goals:["Memahami alasan merencanakan menu sarapan","Memilih komponen menu langkah demi langkah","Mencatat dan mengevaluasi sarapan di aplikasi"],
  story:{l:"Misi seminggu", t:"Kamu sudah tahu apa itu sarapan bergizi seimbang, apa saja komponennya, dan cara menyusun menunya. Sekarang saatnya beraksi. Dengan aplikasi Digital Breakfast Planner, kamu akan merencanakan sarapan, mencatat yang benar-benar kamu makan, lalu mengevaluasinya."},
@@ -311,7 +318,7 @@ const STATUS = [
 /* ================= State ================= */
 function fresh(){
   return {
-    screen:"login", status:"PRETEST", book:1,
+    screen:"login", status:"PRETEST", book:1, readMode:"pdf",
     form:{nama:"",jk:"",tgl:"",sekolah:"",email:"",sandi:"",kelas:""}, errors:{},
     pq:0, ans:[null,null,null,null,null], preDone:false, score:null,
     read:{}, reached:{},
@@ -465,21 +472,24 @@ function secHtml(s){
   return h+'</section>';
 }
 function vBaca(){
-  var b=BOOKS[S.book-1], done=!!S.read[b.id], end=!!S.reached[b.id]||done;
-  return '<div class="scr"><div class="rtop"><div class="r1"><button type="button" data-act="back">'+I.back+'Materi</button><span>Buku '+b.id+' dari 5</span></div>'+
-   '<div class="bar thin" role="progressbar" aria-label="Progres membaca" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="rbar"><i id="rfill" style="width:0%"></i></div></div>'+
-   '<div class="body tight" id="rbody" style="gap:26px">'+
-   '<div style="display:flex;flex-direction:column;gap:10px"><span class="cap">Buku '+b.id+' dari 5</span><h1 class="t" style="font-size:26px">'+esc(b.title)+'</h1><p class="lead" style="margin:0">'+esc(b.tag)+'</p></div>'+
-   '<div class="card sm" style="gap:10px"><span class="cap">Yang akan kamu pelajari</span><ul class="ul" style="font-size:14.5px">'+b.goals.map(function(g){return '<li>'+esc(g)+'</li>';}).join('')+'</ul></div>'+
-   '<div class="callout"><b>'+esc(b.story.l)+'</b><p>'+esc(b.story.t)+'</p></div>'+
-   '<div class="secnav" role="navigation" aria-label="Daftar bab">'+b.secs.map(function(s){return '<button type="button" data-act="sec" data-n="'+s.n.replace('.','-')+'">'+s.n+'</button>';}).join('')+'<button type="button" data-act="sec" data-n="sum">Rangkuman</button></div>'+
-   b.secs.map(secHtml).join('')+
-   '<section class="sec" id="sec-sum"><h2>Rangkuman</h2><ul class="ul">'+b.sum.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul>'+
-   '<div class="callout green"><b>Pesan penting</b><p>'+esc(b.msg)+'</p></div></section>'+
-   '<p class="src" style="margin:0">Digital Breakfast Planner, Buku '+b.id+' dari 5. '+(b.src ? esc(b.src) : 'Sumber utama: Buku Menu Sarapan Aksi Bergizi, Kemenkes RI dan UNICEF (2024).')+'</p>'+
+  var b=BOOKS[S.book-1], done=!!S.read[b.id];
+  return '<div class="scr">'+
+   '<div class="rtop">'+
+     '<div class="r1">'+
+       '<button type="button" data-act="back">'+I.back+'Materi</button>'+
+       '<span>Buku '+b.id+' dari 5</span>'+
+       '<a href="'+b.pdf+'" target="_blank" rel="noopener" class="pdf-ext-btn" title="Buka PDF di tab baru">'+
+         '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>'+
+       '</a>'+
+     '</div>'+
    '</div>'+
-   '<div class="foot"><button class="btn" type="button" id="rdone" data-act="markRead"'+(end?'':' disabled')+'>'+(done?'Sudah selesai, kembali ke daftar':'Tandai selesai dibaca')+'</button>'+
-   '<p class="center" id="rhint" style="margin:0;font-size:12.5px"'+(end?' hidden':'')+'>Gulir sampai rangkuman untuk menandai selesai.</p></div></div>';
+   '<div class="pdf-box">'+
+     '<iframe src="'+b.pdf+'#view=FitH&toolbar=0&navpanes=0" class="pdf-iframe" title="'+esc(b.title)+'"></iframe>'+
+   '</div>'+
+   '<div class="foot" style="gap:8px;padding-top:10px;padding-bottom:18px">'+
+     '<button class="btn" type="button" id="rdone" data-act="markRead">'+(done?'Sudah selesai, kembali ke daftar':'Tandai selesai dibaca')+'</button>'+
+     '<p class="center" style="margin:0;font-size:12px;color:var(--muted)">Scroll pada halaman PDF untuk membaca, atau klik tombol kanan atas untuk layar penuh.</p>'+
+   '</div></div>';
 }
 function vTunggu(){
   function row(ok,t,s){return '<div style="display:flex;gap:12px;align-items:center"><span style="width:28px;height:28px;border-radius:14px;flex:none;display:flex;align-items:center;justify-content:center;'+(ok?'background:var(--green);color:#fff':'background:var(--orange-lt);color:var(--orange-dk);border:2px solid var(--orange)')+'">'+(ok?I.check:'<span style="font-weight:800;font-size:12px">…</span>')+'</span><div style="display:flex;flex-direction:column"><strong style="font-size:14.5px">'+t+'</strong><span style="font-size:12.5px;color:var(--muted)">'+s+'</span></div></div>';}
