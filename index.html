@@ -1,0 +1,723 @@
+<title>Digital Breakfast Planner</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* Layout: panel presentasi di kiri (status akun, lompat layar, simulasi petugas), perangkat 390x844 di kanan.
+   Satu tampilan terang yang sama dengan desain Figma, jadi tidak ada varian gelap. */
+:root{
+  --green:#17624B; --green-dk:#0E4535; --green-lt:#DCEFE6;
+  --orange:#F2A33A; --orange-lt:#FDF0D9; --orange-dk:#7A4A06;
+  --bg:#F5F7F2; --card:#FFFFFF; --line:#D5DED8; --line-in:#B9C7BF;
+  --ink:#14261F; --muted:#55655D; --ph:#66766E; --track:#E4EBE6;
+  --red:#A83B2A; --red-lt:#FBE6E1;
+  --stage:#E6ECE7; --panel:#FFFFFF;
+  --font:'Plus Jakarta Sans',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--stage); color:var(--ink); font-family:var(--font); font-size:14px;
+  padding-left:max(16px,env(safe-area-inset-left,0px)); padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:24px; min-height:100vh;
+  display:flex; flex-wrap:wrap; gap:32px; justify-content:center; align-items:flex-start;
+}
+button{font-family:inherit}
+:focus-visible{outline:3px solid var(--orange); outline-offset:2px}
+
+/* ---------- Panel presentasi ---------- */
+.panel{width:320px; max-width:100%; background:var(--panel); border:1px solid var(--line); border-radius:20px; padding:20px; display:flex; flex-direction:column; gap:16px; order:1}
+.panel h1{margin:0; font-size:20px; line-height:1.2; font-weight:800; letter-spacing:-.3px; text-wrap:balance}
+.panel .sub{margin:4px 0 0; color:var(--muted); font-size:13px; line-height:1.45}
+.panel h2{margin:0 0 10px; font-size:11px; font-weight:700; letter-spacing:.7px; text-transform:uppercase; color:var(--muted)}
+.stat{display:grid; gap:6px}
+.stat-row{display:flex; align-items:center; gap:10px; font-size:13px; font-weight:600; color:var(--muted)}
+.stat-row i{width:22px; height:22px; border-radius:11px; border:2px solid var(--line-in); display:inline-flex; align-items:center; justify-content:center; flex:none; font-style:normal; font-size:11px; font-weight:800}
+.stat-row.done{color:var(--ink)} .stat-row.done i{background:var(--green); border-color:var(--green); color:#fff}
+.stat-row.now{color:var(--orange-dk)} .stat-row.now i{background:var(--orange-lt); border-color:var(--orange); color:var(--orange-dk)}
+.stat-row code{margin-left:auto; font:600 10.5px ui-monospace,Menlo,Consolas,monospace; color:var(--muted)}
+.jump{display:grid; gap:2px}
+.jump .grp{margin:8px 0 2px; font-size:11px; font-weight:700; letter-spacing:.7px; text-transform:uppercase; color:var(--muted)}
+.jump button,.tool{display:flex; align-items:center; gap:10px; width:100%; min-height:36px; padding:6px 12px; border-radius:10px; border:1px solid transparent; background:transparent; font-size:13.5px; font-weight:600; color:var(--ink); text-align:left; cursor:pointer}
+.jump button:hover{background:var(--bg)}
+.jump button[aria-current="true"]{background:var(--green-lt); color:var(--green-dk); border-color:#B9DCCB; font-weight:700}
+.jump .n{width:22px; height:22px; border-radius:7px; background:var(--bg); display:inline-flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; color:var(--muted); flex:none}
+.jump button[aria-current="true"] .n{background:var(--green); color:#fff}
+.tools{display:grid; gap:8px}
+.tool{border-color:var(--line-in); background:#fff; justify-content:center; font-weight:700}
+.tool:hover:not(:disabled){background:var(--bg)}
+.tool.primary{background:var(--green); border-color:var(--green); color:#fff}
+.tool.primary:hover:not(:disabled){background:var(--green-dk)}
+.tool:disabled{opacity:.5; cursor:not-allowed}
+.hint{margin:0; font-size:12px; line-height:1.45; color:var(--muted)}
+
+/* ---------- Perangkat ---------- */
+.stage{order:2; flex:none}
+.stage-box{position:relative; width:calc(410px*var(--s,1)); height:calc(864px*var(--s,1))}
+.device{position:absolute; left:0; top:0; width:410px; height:864px; padding:10px; border-radius:46px; background:#14261F; transform:scale(var(--s,1)); transform-origin:0 0; box-shadow:0 24px 60px rgba(20,38,31,.28)}
+.phone{position:relative; width:390px; height:844px; border-radius:36px; overflow:hidden; background:var(--bg); color:var(--ink)}
+.scr{height:100%; display:flex; flex-direction:column}
+.body{flex:1; min-height:0; overflow-y:auto; padding:52px 24px 24px; display:flex; flex-direction:column; gap:20px; scrollbar-width:thin}
+.body.tight{padding-top:20px}
+.foot{flex:none; padding:12px 24px 28px; display:flex; flex-direction:column; gap:10px; background:var(--bg); border-top:1px solid var(--line)}
+.row{display:flex; gap:12px}
+h1.t{margin:0; font-size:24px; line-height:1.2; font-weight:800; letter-spacing:-.3px; text-wrap:balance}
+h1.t.xl{font-size:30px; line-height:1.15; letter-spacing:-.5px}
+.lead{margin:0; font-size:15px; line-height:1.5; color:var(--muted)}
+.cap{font-size:12px; font-weight:700; letter-spacing:.6px; text-transform:uppercase; color:var(--green)}
+.steps{display:flex; gap:8px} .steps i{flex:1; height:6px; border-radius:3px; background:#D5DED8} .steps i.on{background:var(--green)}
+.card{background:var(--card); border:1px solid var(--line); border-radius:20px; padding:22px; display:flex; flex-direction:column; gap:16px}
+.card.sm{border-radius:18px; padding:16px; gap:12px}
+.field{display:flex; flex-direction:column; gap:8px}
+.field>label,.field>.lbl{font-size:14px; font-weight:600}
+.inp{height:52px; border:1.5px solid var(--line-in); border-radius:14px; padding:0 16px; font:500 16px var(--font); color:var(--ink); background:#fff; width:100%}
+.inp::placeholder{color:var(--ph)}
+.inp:focus{outline:none; border-color:var(--green); box-shadow:0 0 0 3px var(--green-lt)}
+.inp.bad{border-color:var(--red)}
+.inp.sm{height:44px; border-radius:10px; font-size:14px; font-weight:600; padding:0 12px}
+.wrap{position:relative} .wrap svg{position:absolute; right:16px; top:16px; pointer-events:none}
+.err{margin:0; font-size:12.5px; color:var(--red); font-weight:600}
+.seg{display:flex; gap:8px}
+.seg button,.chip{flex:1; min-height:48px; border-radius:12px; border:1.5px solid var(--line-in); background:#fff; font:600 14px var(--font); color:var(--ink); cursor:pointer; padding:0 8px}
+.seg button[aria-pressed="true"],.chip[aria-pressed="true"]{background:var(--green); border-color:var(--green); color:#fff; font-weight:700}
+.chips{display:flex; flex-wrap:wrap; gap:8px}
+.chip{flex:none; min-height:40px; padding:0 14px; border-radius:999px; font-size:13.5px}
+.btn{display:flex; align-items:center; justify-content:center; gap:8px; min-height:56px; border-radius:16px; border:none; background:var(--green); color:#fff; font:700 16px var(--font); cursor:pointer; width:100%; text-decoration:none}
+.btn:hover:not(:disabled){background:var(--green-dk)}
+.btn:disabled{background:#B9C7BF; color:#F5F7F2; cursor:not-allowed}
+.btn.line{background:#fff; color:var(--ink); border:1.5px solid var(--line-in)}
+.btn.line:hover:not(:disabled){background:var(--bg)}
+.btn.amber{background:var(--orange); color:#2B1A02; font-weight:800; min-height:50px; border-radius:14px; font-size:15px}
+.btn.amber:hover{background:#E59A2E}
+.btn.ghost{background:transparent; border:1.5px dashed var(--green); color:var(--green); min-height:48px; border-radius:14px; font-size:14px}
+.btn.ghost:hover{background:var(--green-lt)}
+.btn.outline{background:#fff; border:1.5px solid var(--green); color:var(--green); min-height:50px; border-radius:14px; font-size:15px}
+.btn.outline:hover{background:var(--green-lt)}
+.btn.fit{width:auto; padding:0 22px}
+.link{background:none; border:none; color:var(--green); font:700 14px var(--font); cursor:pointer; padding:6px 4px; text-decoration:underline; text-underline-offset:3px}
+.center{text-align:center; font-size:14px; color:var(--muted)}
+.pill{display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:700; padding:5px 10px; border-radius:999px; white-space:nowrap}
+.pill.ok{background:var(--green-lt); color:var(--green-dk)} .pill.warn{background:var(--orange-lt); color:var(--orange-dk)} .pill.mute{background:#EBF0EC; color:var(--muted)} .pill.bad{background:var(--red-lt); color:var(--red)}
+.logo{width:64px; height:64px; border-radius:20px; background:var(--green); display:flex; align-items:center; justify-content:center}
+.ico{width:48px; height:48px; border-radius:14px; background:var(--green-lt); display:flex; align-items:center; justify-content:center; flex:none}
+.opt{display:flex; align-items:center; gap:14px; min-height:60px; padding:12px 16px; border-radius:16px; border:1.5px solid var(--line); background:#fff; font:600 15px var(--font); color:var(--ink); text-align:left; cursor:pointer; width:100%}
+.opt .dot{width:24px; height:24px; border-radius:12px; border:2px solid var(--line-in); flex:none; display:flex; align-items:center; justify-content:center}
+.opt[aria-pressed="true"]{border:2px solid var(--green); background:var(--green-lt); color:var(--green-dk); font-weight:700; padding:11px 15px}
+.opt[aria-pressed="true"] .dot{background:var(--green); border-color:var(--green)}
+.bar{height:10px; border-radius:5px; background:var(--track); overflow:hidden} .bar i{display:block; height:100%; border-radius:5px; background:var(--green)}
+.bar.thin{height:6px;border-radius:3px}
+.bk{display:flex; gap:14px; align-items:center; text-align:left; width:100%; background:#fff; border:1px solid var(--line); border-radius:18px; padding:14px; cursor:pointer; font-family:inherit; color:inherit}
+.bk:hover{border-color:var(--line-in); background:#FBFCFA}
+.bk .num{width:48px; height:48px; border-radius:14px; background:var(--green-lt); color:var(--green-dk); display:flex; flex-direction:column; align-items:center; justify-content:center; flex:none; font-weight:800; font-size:20px; line-height:1}
+.bk .num small{font-size:9px; font-weight:700; letter-spacing:.5px; margin-bottom:2px}
+.mk{width:28px; height:28px; border-radius:14px; border:2px solid var(--line-in); flex:none; display:flex; align-items:center; justify-content:center; box-sizing:border-box}
+.mk.on{background:var(--green); border-color:var(--green); color:#fff}
+.bk .tx{display:flex; flex-direction:column; gap:3px; flex:1; min-width:0}
+.bk .tx strong{font-size:15px; line-height:1.3} .bk .tx span{font-size:12.5px; color:var(--muted)}
+
+/* Bottom nav */
+.nav{flex:none; height:76px; border-top:1px solid var(--line); background:#fff; display:flex; padding:0 4px}
+.nav button{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; background:none; border:none; font:600 11.5px var(--font); color:var(--muted); cursor:pointer; min-width:0}
+.nav button[aria-current="page"]{color:var(--green); font-weight:800}
+
+/* Reader */
+.rtop{flex:none; padding:48px 16px 10px; background:var(--bg); display:flex; flex-direction:column; gap:10px; border-bottom:1px solid var(--line)}
+.rtop .r1{display:flex; align-items:center; gap:4px}
+.rtop .r1 button{display:flex; align-items:center; gap:4px; min-height:44px; padding:0 10px 0 4px; border:none; background:none; color:var(--green); font:700 14px var(--font); cursor:pointer}
+.rtop .r1 span{margin-left:auto; font-size:12.5px; font-weight:600; color:var(--muted); padding-right:8px}
+.secnav{display:flex; gap:8px; overflow-x:auto; padding:2px 24px 4px; margin:0 -24px; scrollbar-width:none}
+.secnav::-webkit-scrollbar{display:none}
+.secnav button{flex:none; min-height:36px; padding:0 12px; border-radius:999px; border:1.5px solid var(--line-in); background:#fff; font:700 12.5px var(--font); color:var(--green-dk); cursor:pointer}
+.sec{display:flex; flex-direction:column; gap:14px; scroll-margin-top:8px}
+.sec h2{margin:0; font-size:19px; line-height:1.3; font-weight:800; letter-spacing:-.2px; text-wrap:balance}
+.sec h2 em{font-style:normal; color:var(--green); margin-right:6px}
+.sec p{margin:0; font-size:15px; line-height:1.6}
+.callout{border-radius:16px; padding:16px; display:flex; flex-direction:column; gap:6px; background:var(--orange-lt); color:#3F2603}
+.callout b{font-size:11.5px; letter-spacing:.7px; text-transform:uppercase; color:var(--orange-dk)}
+.callout p{font-size:14.5px; line-height:1.55}
+.callout.green{background:var(--green-lt); color:var(--green-dk)} .callout.green b{color:var(--green)}
+.sub3{font-size:13px; font-weight:700; margin:0 0 8px}
+.ul{margin:0; padding-left:20px; display:grid; gap:6px; font-size:15px; line-height:1.5}
+.ol{margin:0; padding:0; list-style:none; display:grid; gap:10px; counter-reset:o}
+.ol li{counter-increment:o; display:flex; gap:12px; font-size:15px; line-height:1.5}
+.ol li::before{content:counter(o); flex:none; width:26px; height:26px; border-radius:13px; background:var(--green); color:#fff; font-weight:800; font-size:13px; display:flex; align-items:center; justify-content:center; margin-top:-1px}
+.tbl{width:100%; border-collapse:collapse; font-size:13.5px}
+.tbl th{text-align:left; font-size:11.5px; letter-spacing:.5px; text-transform:uppercase; color:var(--muted); padding:8px 10px; border-bottom:1.5px solid var(--line)}
+.tbl td{padding:10px; border-bottom:1px solid var(--line); vertical-align:top; line-height:1.4}
+.tbl td:first-child{font-weight:700}
+.mf{display:grid; gap:8px}
+.mf div{display:grid; grid-template-columns:1fr; gap:6px}
+.mf .m{background:var(--red-lt); color:#6E2417; border-radius:12px; padding:10px 14px; font-size:14px; line-height:1.45}
+.mf .f{background:var(--green-lt); color:var(--green-dk); border-radius:12px; padding:10px 14px; font-size:14px; line-height:1.45}
+.mf b{display:block; font-size:10.5px; letter-spacing:.8px; margin-bottom:2px}
+.stats{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+.stats div{background:#fff; border:1px solid var(--line); border-radius:14px; padding:12px 14px; display:flex; flex-direction:column; gap:2px}
+.stats strong{font-size:22px; font-weight:800; color:var(--green)} .stats span{font-size:12.5px; color:var(--muted); line-height:1.35}
+.menus{display:grid; gap:10px}
+.menus div{background:#fff; border:1px solid var(--line); border-radius:14px; padding:12px 14px}
+.menus strong{display:block; font-size:14px; margin-bottom:4px; color:var(--green-dk)} .menus span{font-size:13.5px; line-height:1.5; color:var(--ink)}
+.src{margin:0; font-size:12px; line-height:1.5; color:var(--muted)}
+.foodcard .stt{display:flex; gap:6px} .foodcard .stt button{flex:1; min-height:40px; border-radius:10px; border:1.5px solid var(--line-in); background:#fff; font:600 12.5px var(--font); color:var(--ink); cursor:pointer; padding:0 4px}
+.foodcard .stt button[aria-pressed="true"].s{background:var(--green); border-color:var(--green); color:#fff}
+.foodcard .stt button[aria-pressed="true"].d{background:var(--orange); border-color:var(--orange); color:#2B1A02}
+.foodcard .stt button[aria-pressed="true"].t{background:var(--ink); border-color:var(--ink); color:#fff}
+.foodcard.off .inp{background:#EEF2EF; color:var(--muted)}
+.days{display:flex; justify-content:space-between; gap:4px}
+.day{flex:1; display:flex; flex-direction:column; align-items:center; gap:6px; background:none; border:none; cursor:pointer; font:600 12px var(--font); color:var(--ink); padding:4px 0; border-radius:12px}
+.day[aria-pressed="true"]{background:var(--green-lt)}
+.dot2{width:38px; height:38px; border-radius:19px; display:flex; align-items:center; justify-content:center; box-sizing:border-box}
+.dot2.s{background:var(--green)} .dot2.p{background:var(--orange)} .dot2.x{background:var(--red)} .dot2.n{border:2px dashed #8FA196}
+.legend{display:flex; gap:14px; flex-wrap:wrap; font-size:12px; color:var(--muted)} .legend span{display:flex; align-items:center; gap:6px}
+.legend i{width:10px; height:10px; border-radius:5px; display:inline-block}
+.tabs{display:flex; gap:8px} .tabs button{flex:1; min-height:44px; border-radius:12px; border:1.5px solid var(--line-in); background:#fff; font:700 13.5px var(--font); color:var(--ink); cursor:pointer}
+.tabs button[aria-pressed="true"]{background:var(--green); border-color:var(--green); color:#fff}
+.toast{position:absolute; left:20px; right:20px; bottom:96px; background:var(--ink); color:#fff; border-radius:14px; padding:13px 16px; font-size:14px; font-weight:600; line-height:1.4; opacity:0; transform:translateY(8px); pointer-events:none; transition:opacity .2s,transform .2s; z-index:5}
+.toast.on{opacity:1; transform:none}
+.big{font-size:56px; font-weight:800; letter-spacing:-1.5px; color:var(--green-dk); line-height:1}
+@media (max-width:959px){ .panel{order:2; width:410px} .stage{order:1} body{gap:24px} }
+@media (prefers-reduced-motion:reduce){ .toast{transition:none} }
+</style>
+
+<aside class="panel" aria-label="Panel presentasi">
+  <div>
+    <h1>Digital Breakfast Planner</h1>
+    <p class="sub">Prototipe aplikasi siswa. Semua layar bisa diklik sesuai alur final.</p>
+  </div>
+  <section aria-labelledby="h-status">
+    <h2 id="h-status">Status akun siswa</h2>
+    <div class="stat" id="statusList"></div>
+  </section>
+  <section aria-labelledby="h-jump">
+    <h2 id="h-jump">Lompat ke layar</h2>
+    <nav class="jump" id="jumpList" aria-label="Daftar layar"></nav>
+  </section>
+  <section aria-labelledby="h-tools">
+    <div class="tools">
+      <button class="tool" id="toolFill" type="button" data-act="fill">Isi data contoh di form</button>
+      <button class="tool primary" id="toolVerify" type="button" data-act="verify">Simulasi: petugas selesaikan SQ-FFQ</button>
+      <button class="tool" type="button" data-act="reset">Mulai ulang dari awal</button>
+    </div>
+    <p class="hint" style="margin-top:10px">Di web admin, petugas mengisi SQ-FFQ. Begitu selesai, database mengubah status akun menjadi Terverifikasi dan Beranda siswa terbuka.</p>
+  </section>
+</aside>
+
+<main class="stage" id="stage" aria-label="Aplikasi siswa">
+  <div class="stage-box" id="stageBox">
+    <div class="device">
+      <div class="phone" id="phone"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+(function(){
+"use strict";
+
+/* ================= Data ================= */
+const BOOKS = [
+{id:1, title:"Mengenal Sarapan dan Manfaatnya", tag:"Kenapa sarapan penting untuk tenaga, semangat, dan konsentrasi belajar.", min:"4",
+ src:"Sumber utama: Buku Menu Sarapan Aksi Bergizi (Kemenkes RI dan UNICEF, 2024), Bab 1, halaman 1–2.",
+ goals:["Menjelaskan arti sarapan","Memahami mengapa remaja perlu sarapan","Mengenal 6 manfaat sarapan dan dampak jika dilewatkan"],
+ story:{l:"Cerita pagi Rani", t:"Alarm berbunyi jam 05.30. Rani mandi, memakai seragam, lalu buru-buru memesan ojek online supaya tidak terlambat. \"Nanti beli jajan di kantin saja,\" pikirnya. Jam 09.30, pelajaran matematika baru separuh jalan, tapi perut Rani sudah keroncongan dan konsentrasinya buyar. Ia hanya memikirkan satu hal: makan apa saja yang ada di kantin."},
+ secs:[
+ {n:"1.1",t:"Apa Itu Sarapan?",p:["Sarapan adalah kegiatan makan pada pagi hari, sebelum kamu memulai aktivitas sehari-hari. Sarapan menjadi bagian penting dari pola makan karena membantu menyediakan zat gizi yang dibutuhkan tubuh untuk memulai hari.","Bagi remaja, sarapan perlu mendapat perhatian khusus. Masa remaja adalah periode pertumbuhan yang ditandai dengan perubahan fisik dan mental, serta kebutuhan gizi yang meningkat."],chips:["Dimakan pagi hari","Sebelum beraktivitas","Gizi untuk tubuh"],co:{l:"Tahukah kamu?",t:"Tubuhmu seperti ponsel yang dipakai seharian. Semalaman tubuh beristirahat, dan sarapan ibarat mengisi daya sebelum kamu memulai hari yang panjang."}},
+ {n:"1.2",t:"Mengapa Sarapan Penting bagi Remaja?",p:["Masa remaja adalah salah satu periode penting dalam pertumbuhan. Pada masa ini terjadi percepatan pertumbuhan, sehingga kebutuhan gizi ikut meningkat.","Jika kebutuhan gizi tidak terpenuhi, remaja berisiko mengalami masalah gizi. Beberapa di antaranya:"],chips:["Anemia","Gizi kurang","Masalah gizi lainnya"],p2:["Sarapan adalah salah satu cara untuk membantu memenuhi kebutuhan gizi remaja. Selain itu, sarapan juga menjadi sumber tenaga untuk memulai aktivitas di pagi hari."],co:{l:"Coba sekarang",g:1,items:["Ingat-ingat: dalam seminggu terakhir, berapa hari kamu sarapan sebelum berangkat sekolah?","Apa alasan utama kamu kadang tidak sempat sarapan?","Tulis satu hal kecil yang bisa kamu ubah mulai besok."]}},
+ {n:"1.3",t:"Waktu yang Tepat untuk Sarapan",p:["Sarapan sebaiknya dilakukan pada pagi hari sebelum memulai aktivitas, termasuk sebelum berangkat sekolah. Membiasakan sarapan membantu tubuh mendapat asupan makanan untuk menunjang kegiatan pagi.","Anak kota sering dikejar waktu: macet, antar-jemput, atau jarak sekolah yang jauh. Karena itu, kuncinya adalah persiapan."],groups:[{t:"Malam sebelumnya",c:["Siapkan bahan makanan","Rencanakan menu sarapan agar tidak bingung","Pastikan ada waktu makan sebelum berangkat"]},{t:"Pagi hari",c:["Bangun cukup awal","Siapkan atau ambil sarapan yang sudah direncanakan","Makan dulu sebelum berangkat sekolah"]}],co:{l:"Tips untuk kamu",items:["1. Siapkan bahan makanan pada malam sebelumnya.","2. Rencanakan menu agar tidak bingung di pagi hari.","3. Usahakan menyediakan waktu untuk sarapan sebelum berangkat."]}},
+ {n:"1.4",t:"Manfaat Sarapan bagi Aktivitas dan Konsentrasi",p:["Menurut Buku Menu Sarapan Aksi Bergizi, sarapan memiliki enam manfaat bagi remaja:"],chips:["Sumber tenaga","Semangat","Cegah kelelahan","Konsentrasi","Daya tahan tubuh","Cegah jajanan kurang sehat"],ol:["Sumber tenaga: Membantu menyediakan energi untuk memulai aktivitas pagi.","Meningkatkan semangat: Membuatmu lebih bersemangat menjalani aktivitas.","Mencegah kelelahan: Membantu mengurangi risiko kelelahan saat beraktivitas.","Meningkatkan konsentrasi: Menunjang konsentrasi selama kegiatan belajar.","Menjaga daya tahan tubuh: Membantu mendukung kesehatan tubuh.","Mencegah jajanan kurang sehat: Mengurangi kecenderungan memilih jajanan yang kurang sehat."]},
+ {n:"1.5",t:"Dampak Melewatkan Sarapan",p:["Melewatkan sarapan termasuk pola makan yang kurang baik pada remaja. Jika sarapan sering dilewatkan, zat gizi yang dibutuhkan tubuh bisa tidak terpenuhi secara optimal.","Hal ini perlu diperhatikan karena kamu sedang tumbuh dan kebutuhan gizimu meningkat. Karena itu, biasakan sarapan dengan menu bergizi seimbang."],mf:[{m:"Remaja sudah besar, jadi tidak perlu sarapan.",f:"Justru remaja sedang tumbuh dan kebutuhan gizinya meningkat."},{m:"Sarapan harus selalu nasi.",f:"Makanan pokok bisa diganti ubi, mi, atau bihun."},{m:"Cukup minum teh manis atau kopi, sudah sarapan.",f:"Minuman manis bukan pengganti makanan. Sarapan perlu menu bergizi yang beragam."}]}],
+ sum:["Sarapan adalah makan pagi sebelum beraktivitas.","Remaja sedang tumbuh sehingga kebutuhan gizinya meningkat.","Sarapan membantu tenaga, semangat, dan konsentrasi belajar.","Sarapan membantu mengurangi kebiasaan jajan yang kurang sehat.","Siapkan bahan dan rencanakan menu sejak malam sebelumnya."],
+ msg:"Jangan melewatkan sarapan. Awali aktivitas pagi dengan makanan yang bergizi dan beragam."},
+
+{id:2, title:"Mengenal Sarapan Bergizi Seimbang", tag:"Kenali empat komponen menu dan manfaat pangan lokal yang beragam.", min:"3",
+ src:"Sumber utama: Buku Menu Sarapan Aksi Bergizi (Kemenkes RI dan UNICEF, 2024), Bab 2, halaman 3–5.",
+ goals:["Menjelaskan arti sarapan bergizi seimbang","Menyebutkan 4 komponen menu sarapan","Memahami pentingnya keragaman dan pangan lokal"],
+ story:{l:"Cerita pagi Dimas", t:"Dimas selalu sarapan. Tapi menunya itu-itu saja: sepiring nasi dan kerupuk, kadang hanya mi instan. Perutnya kenyang, tapi menu itu belum lengkap. Sarapan yang baik bukan cuma soal kenyang. Ada empat komponen yang saling melengkapi. Yuk, kenali satu per satu."},
+ secs:[
+ {n:"2.1",t:"Apa Itu Sarapan Bergizi Seimbang?",p:["Sarapan bergizi seimbang adalah hidangan yang mengandung zat gizi dalam jenis dan jumlah yang sesuai dengan kebutuhan tubuh.","Dalam penyusunan menu di buku ini, sarapan direncanakan memenuhi sekitar 15–30% kebutuhan gizi sehari. Buku memakai standar 25% untuk remaja usia 13–15 tahun dan 16–18 tahun."],co:{l:"Ingat",t:"Menu sarapan tidak cukup hanya satu jenis makanan. Kombinasikan beberapa kelompok bahan pangan dalam satu hidangan."}},
+ {n:"2.2",t:"Empat Komponen Menu Sarapan",p:["Menu bergizi seimbang terdiri atas empat komponen utama. Bayangkan sebuah piring yang dibagi menjadi empat bagian:"],groups:[{t:"1. Makanan pokok (karbohidrat)",c:["Nasi","Ubi jalar","Mi","Bihun","Roti","Jagung"]},{t:"2. Lauk-pauk (protein)",c:["Ikan","Ayam","Telur","Tempe","Tahu"]},{t:"3. Sayuran (vitamin dan mineral)",c:["Bayam","Kangkung","Wortel","Kacang panjang"]},{t:"4. Buah-buahan (vitamin dan mineral)",c:["Pisang","Jeruk","Pepaya","Semangka","Melon"]}]},
+ {n:"2.3",t:"Pentingnya Keragaman Makanan",p:["Susun menu sarapan dari bahan makanan yang beragam. Keragaman membantu tubuh mendapat berbagai zat gizi yang dibutuhkan.","Ibarat tim sepak bola, setiap pemain punya peran. Kalau hanya ada penyerang, tim tidak seimbang. Begitu juga sarapan: tiap kelompok bahan pangan punya perannya sendiri.","Tukar-tukar menu: Makanan pokok tidak harus selalu nasi. Lauk, sayur, dan buah pun bisa divariasikan setiap hari."],table:{h:["Komponen","Boleh diganti dengan"],r:[["Makanan pokok","Nasi, ubi, mi, bihun, roti, jagung"],["Lauk","Ikan, ayam, telur, tempe, tahu"],["Sayur","Bayam, kangkung, wortel, kacang panjang"],["Buah","Pisang, jeruk, pepaya, semangka, melon"]]},p2:["Buku juga menganjurkan bahan pangan lokal. Selain mudah diperoleh, bahan lokal bisa diolah menjadi menu menarik yang sesuai dengan kebiasaan makan remaja."]},
+ {n:"2.4",t:"Cek Piringmu",mf:[{m:"Sayur hanya untuk makan siang atau malam.",f:"Sayur termasuk komponen menu sarapan bergizi seimbang."},{m:"Sarapan cukup satu jenis makanan asal kenyang.",f:"Menu sarapan perlu mengombinasikan beberapa kelompok bahan pangan."}],co:{l:"Coba sekarang: Cek sarapan kemarin",g:1,items:["Apakah ada makanan pokok?","Apakah ada lauk (hewani atau nabati)?","Apakah ada sayur?","Apakah ada buah?","Berapa komponen yang sudah ada, dan mana yang belum?"]}}],
+ sum:["Sarapan bergizi seimbang mengandung zat gizi dalam jenis dan jumlah yang sesuai kebutuhan.","Ada 4 komponen: makanan pokok, lauk-pauk, sayur, dan buah.","Lauk bisa hewani maupun nabati, dan boleh dikombinasikan.","Makanan pokok tidak harus nasi.","Bahan pangan lokal mudah didapat dan bisa diolah jadi menu menarik."],
+ msg:"Lengkapi sarapan dengan makanan pokok, lauk-pauk, sayur, dan buah agar menu lebih beragam."},
+
+{id:3, title:"Mengenal Sumber Zat Gizi dalam Sarapan", tag:"Dari karbohidrat sampai vitamin: temukan gizi di setiap piring sarapan.", min:"4",
+ src:"Sumber utama: Buku Menu Sarapan Aksi Bergizi (Kemenkes RI dan UNICEF, 2024), Bab 3 halaman 7–12 dan Bab 6 halaman 30–35.",
+ goals:["Mengenali bahan makanan sumber karbohidrat","Membedakan protein hewani dan nabati","Memahami peran sayur, buah, dan minuman"],
+ story:{l:"Detektif gizi", t:"Bayangkan sarapanmu adalah sebuah misteri. Di balik sepiring nasi, telur, tumis bayam, dan pepaya, ada berbagai zat gizi yang bekerja untuk tubuhmu. Mari berperan sebagai detektif gizi dan temukan siapa memberi apa."},
+ secs:[
+ {n:"3.1",t:"Mengenal Sumber Karbohidrat",p:["Makanan pokok adalah komponen utama menu sarapan dan menjadi sumber karbohidrat. Karbohidrat tidak hanya berasal dari nasi; ada banyak pilihan pengganti."],chips:["Nasi","Ubi","Mi","Bihun","Kentang","Singkong","Roti","Jagung"],p2:["Dengan banyak pilihan ini, sarapanmu bisa lebih bervariasi tanpa harus selalu memakai nasi.","Variasi sumber karbohidrat: Satu kelompok bahan, banyak pilihan. Kamu bisa bergantian memilih nasi, ubi, mi, bihun, kentang, singkong, roti, atau jagung dari hari ke hari. Pilih sesuai ketersediaan bahan dan seleramu."],co:{l:"Tahukah kamu?",t:"Bosan dengan nasi? Besok coba ubi rebus, bihun goreng sayur, roti, atau jagung rebus. Sama-sama sumber karbohidrat, rasanya beda."}},
+ {n:"3.2",t:"Protein Hewani dan Nabati",p:["Protein bisa diperoleh dari bahan pangan hewani maupun nabati. Lauk-pauk dapat memakai salah satu atau kombinasi keduanya."],groups:[{t:"Protein hewani: berasal dari hewan",c:["Ayam","Ikan","Telur","Udang","Daging"]},{t:"Protein nabati: berasal dari tumbuhan",c:["Tempe","Tahu","Kacang kedelai","Kacang hijau","Kacang merah","Oncom"]}],co:{l:"Contoh kombinasi",t:"Nasi + telur + tempe, atau nasi + ikan + tumis sayuran. Hewani dan nabati bisa bergandengan dalam satu piring.",g:1}},
+ {n:"3.3",t:"Peran Sayur dan Buah",p:["Buku Menu Sarapan Aksi Bergizi mengelompokkan sayuran dan buah sebagai sumber vitamin dan mineral. Selain itu, sayur dan buah juga merupakan sumber serat. Ketiganya penting dalam sarapan bergizi seimbang."],groups:[{t:"Contoh sayuran",c:["Bayam","Kangkung","Wortel","Brokoli","Buncis","Kacang panjang","Sawi"]},{t:"Contoh buah-buahan",c:["Pisang","Jeruk","Pepaya","Apel","Semangka","Melon","Mangga"]}],p2:["Menambah sayur dan buah membuat bahan pangan yang kamu makan lebih beragam. Usahakan selalu menyertakannya dalam sarapan sehari-hari."],co:{l:"Peran sayur dan buah",t:"Vitamin dan mineral: ada pada sayur dan buah. Serat: juga berasal dari sayur dan buah, dan membantu menjaga kesehatan pencernaan."},co2:{l:"Tahukah kamu?",t:"Coba buat sarapan yang berwarna: hijau dari sayur, oranye dari wortel atau jeruk, kuning dari pisang. Makin beragam warnanya, makin beragam bahan pangannya."}},
+ {n:"3.4",t:"Pilihan Minuman Saat Sarapan",p:["Minuman bisa menjadi pelengkap sarapan. Air putih adalah pilihan untuk membantu memenuhi kebutuhan cairan tubuh. Susu juga termasuk dalam daftar kelompok bahan makanan pada buku."],chips:["Air putih","Susu"],co:{l:"Tips memilih minuman",items:["Utamakan air putih.","Batasi minuman dengan tambahan gula berlebihan.","Jangan menjadikan minuman manis sebagai pengganti makanan utama."]},co2:{l:"Coba sekarang: Jadi detektif gizi",g:1,items:["Tulis menu sarapan terakhirmu.","Tandai mana sumber karbohidrat, protein, serta vitamin, mineral, dan serat.","Mana yang masih kurang? Apa yang bisa kamu tambahkan?"]}}],
+ sum:["Makanan pokok adalah sumber karbohidrat: nasi, ubi, mi, bihun, kentang, singkong, roti, jagung.","Protein berasal dari hewan (ayam, ikan, telur) dan tumbuhan (tempe, tahu, kacang-kacangan).","Sayur dan buah adalah sumber vitamin, mineral, dan serat.","Utamakan air putih dan batasi minuman bergula."],
+ msg:"Lengkapi menu sarapan dengan sumber karbohidrat, protein, sayur, dan buah, serta pilih minuman yang sesuai."},
+
+{id:4, title:"Menyusun Menu Sarapan Bergizi Seimbang", tag:"Padukan bahan makanan menjadi menu sarapan yang lengkap dan menarik.", min:"4",
+ src:"Sumber utama: Buku Menu Sarapan Aksi Bergizi (Kemenkes RI dan UNICEF, 2024), Bab 2 halaman 3–6 dan Bab 7 halaman 38–77.",
+ goals:["Menyusun menu dari 4 komponen utama","Membuat variasi menu dari bahan lokal","Memahami standar porsi sarapan"],
+ story:{l:"Rumus sarapan", t:"Makanan pokok + Lauk + Sayur + Buah = Sarapan bergizi seimbang. Itu saja rumusnya. Sisanya tinggal berkreasi dengan bahan yang ada di dapurmu, warung dekat rumah, atau pasar di sekitarmu."},
+ secs:[
+ {n:"4.1",t:"Contoh Kombinasi Menu Sarapan",p:["Menu sarapan disusun dengan mengombinasikan makanan pokok, lauk-pauk, sayur, dan buah. Berikut lima contoh menu dari Buku Menu Sarapan Aksi Bergizi:"],menus:[["Menu 1: Nasi Kuning","Nasi kuning, ikan goreng rica, tumis kacang panjang campur tempe, jeruk"],["Menu 2: Mi Goreng Komplit","Mi goreng komplit, telur ceplok, pisang"],["Menu 3: Nasi Putih","Nasi putih, ikan kuah kuning, tumis daun singkong, pisang"],["Menu 4: Nasi Pecel","Nasi pecel sayur, telur dadar, jeruk"],["Menu 5: Ubi Rebus","Ubi rebus, ikan goreng rica, tumis daun gedi, jeruk"]],p2:["Contoh-contoh ini memakai bahan pangan lokal dan berbagai kombinasi makanan."]},
+ {n:"4.2",t:"Variasi Bahan Makanan",p:["Variasi membuat menu tidak monoton. Kamu bisa merencanakan menu untuk beberapa hari atau satu minggu sekaligus."],table:{h:["Komponen","Variasi bahan"],r:[["Makanan pokok","Nasi, ubi, mi, bihun, roti, jagung"],["Lauk hewani","Ayam, ikan, telur"],["Lauk nabati","Tempe, tahu, kacang-kacangan"],["Sayur","Bayam, kangkung, wortel, buncis"],["Buah","Pisang, jeruk, pepaya, semangka"]]},p2:["Saat membuat variasi, pertimbangkan ketersediaan bahan pangan, kebiasaan makan, dan seleramu. Bahan pangan lokal membuat menu lebih mudah dibuat dan sesuai kondisi setempat."],co:{l:"Tips menu praktis",items:["Pilih bahan yang mudah didapat di sekitar rumah.","Siapkan bahan sejak malam sebelumnya.","Rencanakan menu untuk beberapa hari sekaligus."]}},
+ {n:"4.3",t:"Penyesuaian Porsi Sarapan",p:["Setiap kelompok umur punya kebutuhan gizi berbeda. Buku menggunakan standar sarapan sekitar 25% kebutuhan gizi harian remaja usia 13–15 dan 16–18 tahun, dengan standar bahan (berat matang) berikut:"],stats:[["200 g","Makanan pokok"],["70 g","Lauk hewani / nabati"],["50 g","Sayur"],["75 g","Buah"]],co:{l:"Catatan",t:"Angka ini adalah standar perencanaan menu dalam buku, bukan aturan bahwa setiap siswa harus makan porsi yang persis sama.",g:1},p2:["Porsi sarapan disesuaikan dengan kebutuhanmu. Porsi sarapan tidak berdiri sendiri. Ada tiga hal yang perlu kamu ingat:"],steps:["Kebutuhan tiap orang berbeda: Kebutuhan gizi berbeda menurut kelompok umur, dan setiap siswa punya kebutuhan masing-masing. Porsi bisa disesuaikan, tidak harus sama persis.","Sarapan adalah bagian dari makan sehari: Standar buku sekitar 25% kebutuhan gizi harian. Sisanya dipenuhi dari makan siang, makan malam, dan selingan.","Lihat gambaran sehari penuh: Menilai porsi sarapan berarti melihatnya bersama kebutuhan makan sehari secara keseluruhan."]},
+ {n:"4.4",t:"Contoh Menu Sarapan Remaja",p:["Gunakan empat contoh berikut sebagai inspirasi menyusun sarapanmu:"],menus:[["Menu A","Nasi, telur dadar, tumis bayam, pepaya"],["Menu B","Ubi rebus, ikan goreng, tumis sayuran, jeruk"],["Menu C","Nasi, ayam, tempe, sup sayuran, pisang"],["Menu D","Bihun goreng sayur, telur, pisang"]],co:{l:"Coba sekarang: Rakit menumu",g:1,items:["Pilih 1 makanan pokok.","Pilih 1 lauk hewani dan/atau nabati.","Pilih 1 sayur.","Pilih 1 buah.","Beri nama menumu, lalu coba buat besok pagi!"]}}],
+ sum:["Rumus menu: makanan pokok + lauk + sayur + buah.","Variasi menu membuat sarapan tidak membosankan.","Bahan pangan lokal mudah didapat dan mudah diolah.","Standar sarapan di buku: pokok 200 g, lauk 70 g, sayur 50 g, buah 75 g.","Porsi disesuaikan dengan kebutuhan masing-masing dan kebutuhan makan sehari secara keseluruhan.","Rencanakan menu untuk beberapa hari atau seminggu."],
+ msg:"Susun menu sarapan yang beragam, mudah disiapkan, memakai bahan pangan lokal, dan memperhatikan kebutuhan porsi."},
+
+{id:5, title:"Merencanakan Sarapan dengan Breakfast Planner", tag:"Rencanakan, catat, dan evaluasi sarapanmu langkah demi langkah.", min:"4",
+ src:"Sumber utama: Buku Menu Sarapan Aksi Bergizi (Kemenkes RI dan UNICEF, 2024), Bab 2 halaman 4–6. Fitur perencanaan dan pencatatan mengikuti fungsi aplikasi Digital Breakfast Planner.",
+ goals:["Memahami alasan merencanakan menu sarapan","Memilih komponen menu langkah demi langkah","Mencatat dan mengevaluasi sarapan di aplikasi"],
+ story:{l:"Misi seminggu", t:"Kamu sudah tahu apa itu sarapan bergizi seimbang, apa saja komponennya, dan cara menyusun menunya. Sekarang saatnya beraksi. Dengan aplikasi Digital Breakfast Planner, kamu akan merencanakan sarapan, mencatat yang benar-benar kamu makan, lalu mengevaluasinya."},
+ secs:[
+ {n:"5.1",t:"Mengapa Perlu Merencanakan Menu?",p:["Menu sarapan bisa direncanakan sejak awal untuk dijalankan setiap minggu. Tujuannya agar kamu tidak bosan dengan menu yang dimakan.","Hal yang perlu diperhatikan saat merencanakan menu:"],ul:["Ketersediaan bahan pangan","Kebiasaan makan","Selera atau kesukaan","Keragaman bahan pangan","Kesesuaian menu dengan kebutuhan gizi"],p2:["Lewat aplikasi Digital Breakfast Planner, kamu bisa merencanakan menu sarapan untuk esok hari."]},
+ {n:"5.2",t:"Menentukan Makanan Pokok",p:["Langkah pertama adalah memilih makanan pokok sebagai sumber karbohidrat. Tidak harus nasi; pilih sesuai ketersediaan bahan dan kesukaanmu."],chips:["Nasi","Ubi jalar","Mi","Bihun","Kentang","Singkong","Roti","Jagung"]},
+ {n:"5.3",t:"Memilih Lauk Hewani atau Nabati",p:["Lanjutkan dengan memilih lauk-pauk. Kedua jenis lauk boleh dikombinasikan agar menu lebih beragam."],groups:[{t:"Protein hewani",c:["Ikan","Ayam","Telur","Udang"]},{t:"Protein nabati",c:["Tempe","Tahu","Kacang hijau","Kacang merah"]}]},
+ {n:"5.4",t:"Menambahkan Sayur dan Buah",p:["Sayur dan buah tidak boleh dilupakan. Kombinasinya membantu menambah keragaman zat gizi dalam sarapanmu."],groups:[{t:"Sayur",c:["Bayam","Wortel","Kangkung","Buncis"]},{t:"Buah",c:["Pisang","Jeruk","Pepaya","Apel"]}]},
+ {n:"5.5",t:"Memilih Minuman",p:["Minuman bisa direncanakan sebagai pelengkap sarapan. Pilihannya antara lain air putih dan susu. Utamakan yang sesuai kebutuhan tubuh dan batasi minuman dengan tambahan gula berlebihan."],chips:["Air putih","Susu"]},
+ {n:"5.6",t:"Merencanakan dan Mencatat Sarapan",p:["Setelah memahami komponen menu bergizi seimbang, ikuti enam langkah ini di aplikasi Digital Breakfast Planner:"],ol:["Rencanakan menu sarapan: Tentukan menu yang akan dimakan besok.","Pilih komponen makanan: Makanan pokok, lauk hewani dan/atau nabati, sayur, dan buah.","Tentukan minuman: Pilih minuman yang cocok untuk melengkapi sarapan.","Simpan rencana menu: Simpan di aplikasi sebagai panduan saat menyiapkan sarapan.","Catat yang benar-benar dimakan: Setelah sarapan, catat makanan dan minuman yang kamu konsumsi.","Evaluasi kesesuaian menu: Bandingkan rencana dengan yang dimakan: apakah sudah terlaksana?"]},
+ {n:"5.7",t:"Contoh Rencana dan Realisasi",p:["Contoh bagaimana rencana dibandingkan dengan yang benar-benar dimakan (contoh ilustrasi):"],table:{h:["Komponen","Rencana","Dimakan"],r:[["Makanan pokok","Nasi","Nasi"],["Lauk","Telur dadar","Telur dadar"],["Sayur","Tumis bayam","Tidak ada"],["Buah","Pepaya","Pisang"],["Minuman","Air putih","Air putih"]]},p2:["Dari contoh ini kamu bisa melihat: sebagian besar rencana terlaksana, tetapi sayur belum ada dan buah diganti. Evaluasi seperti ini membantumu memperbaiki rencana berikutnya."],co:{l:"Tantangan 7 hari",g:1,items:["Rencanakan sarapan setiap malam.","Catat yang benar-benar kamu makan setiap pagi.","Evaluasi: berapa hari rencanamu terlaksana?","Isi lembar rencana mingguan di halaman berikut."]}},
+ {n:"5.8",t:"Lembar Rencana Sarapan Mingguan",p:["Isi lembar ini setiap minggu. Tulis menu yang kamu rencanakan, lalu beri tanda centang jika benar-benar kamu makan. Merencanakan satu minggu sekaligus membuat belanja bahan dan persiapan lebih mudah."],table:{h:["Hari","Rencana menu sarapan","Dimakan?"],r:[["Senin","Contoh: Nasi kuning, telur, tumis bayam, jeruk","✓"],["Selasa","Contoh: Ubi rebus, ikan, sayur, pisang","✓"],["Rabu","(Rencana diisi di menu Planner)","—"],["Kamis","(Rencana diisi di menu Planner)","—"],["Jumat","(Rencana diisi di menu Planner)","—"],["Sabtu","(Rencana diisi di menu Planner)","—"],["Minggu","(Rencana diisi di menu Planner)","—"]]},p2:["Di aplikasi Digital Breakfast Planner, lembar ini otomatis terhubung dengan fitur Planner dan Food record."]}],
+ sum:["Rencanakan menu sejak awal agar tidak bosan.","Pilih makanan pokok, lauk, sayur, buah, dan minuman.","Simpan rencana, lalu catat yang benar-benar dimakan.","Bandingkan rencana dan realisasi untuk evaluasi."],
+ msg:"Jangan hanya merencanakan sarapan. Usahakan untuk mewujudkan rencana itu dalam konsumsi sehari-hari."}
+];
+BOOKS.forEach(function(b){b.nsec=b.secs.length;});
+
+const QUIZ = [
+ {q:"Apa manfaat utama sarapan bagi remaja sebelum belajar?", o:["Supaya cepat merasa lapar saat istirahat","Memberi tenaga dan membantu konsentrasi belajar","Menggantikan makan siang","Tidak ada manfaat khusus"], a:1},
+ {q:"Apa saja empat komponen menu sarapan bergizi seimbang?", o:["Nasi, kerupuk, mi instan, teh manis","Karbohidrat, lemak, garam, gula","Makanan pokok, lauk-pauk, sayur, dan buah","Roti, susu, keju, selai"], a:2},
+ {q:"Makanan pokok tidak harus nasi. Manakah yang bisa menggantikannya?", o:["Ubi, mi, atau roti","Air putih","Tempe dan tahu","Bayam dan wortel"], a:0},
+ {q:"Manakah yang termasuk sumber protein nabati?", o:["Telur dan udang","Bayam dan wortel","Ikan dan ayam","Tempe dan tahu"], a:3},
+ {q:"Minuman apa yang diutamakan saat sarapan?", o:["Air putih","Minuman manis kemasan","Teh manis sebagai pengganti makanan","Kopi"], a:0}
+];
+
+const PICK = {
+ pokok:{t:"Makanan pokok", o:["Nasi","Ubi jalar","Mi","Bihun","Kentang","Singkong","Roti","Jagung"], urt:"1 piring", g:200},
+ lauk:{t:"Lauk hewani atau nabati", o:["Ikan","Ayam","Telur dadar","Udang","Tempe","Tahu","Kacang hijau","Kacang merah"], urt:"1 potong sedang", g:70},
+ sayur:{t:"Sayur", o:["Tumis bayam","Wortel","Kangkung","Buncis"], urt:"½ mangkuk", g:50},
+ buah:{t:"Buah", o:["Pepaya","Pisang","Jeruk","Apel"], urt:"1 potong", g:75},
+ minuman:{t:"Minuman", o:["Air putih","Susu"], urt:"1 gelas", g:200}
+};
+
+const SCREENS = [
+ ["login","Login","Onboarding"],["register","Buat akun","Onboarding"],["pretest","Pretest","Onboarding"],
+ ["materi","Materi edukasi","Onboarding"],["baca","Baca materi","Onboarding"],["tunggu","Menunggu verifikasi","Onboarding"],
+ ["beranda","Beranda","Program 3 minggu"],["planner","Planner sarapan","Program 3 minggu"],["food","Food record","Program 3 minggu"],["rekap","Rekap progres","Program 3 minggu"]
+];
+const STATUS = [
+ ["PRETEST","Data diri dan pretest"],["EDUKASI","Membaca materi edukasi"],["MENUNGGU_VERIFIKASI","Menunggu verifikasi"],["TERVERIFIKASI","Terverifikasi"]
+];
+
+/* ================= State ================= */
+function fresh(){
+  return {
+    screen:"login", status:"PRETEST", book:1,
+    form:{nama:"",jk:"",tgl:"",sekolah:"",email:"",sandi:"",kelas:""}, errors:{},
+    pq:0, ans:[null,null,null,null,null], preDone:false, score:null,
+    read:{}, reached:{},
+    plan:{jam:"06.30",tempat:"Rumah",saved:false,pokok:"Nasi",lauk:"Telur dadar",sayur:"Tumis bayam",buah:"Pepaya",minuman:"Air putih"},
+    fr:{items:null,waktu:"06.35",tempat:"Rumah",tidak:false,saved:false},
+    week:1, day:null, todayStatus:null
+  };
+}
+let S = fresh();
+let toastTimer = null;
+
+/* ================= Helpers ================= */
+const esc = function(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});};
+const $ = function(s){return document.querySelector(s);};
+const I = {
+ check:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+ minus:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" aria-hidden="true"><path d="M6 12h12"/></svg>',
+ x:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+ plus:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>',
+ back:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>',
+ home:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11l8-7 8 7v8.5a.5.5 0 0 1-.5.5H15v-6H9v6H4.5a.5.5 0 0 1-.5-.5z"/></svg>',
+ book:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5C4 4.7 4.7 4 5.5 4H11v16H5.5C4.7 20 4 19.3 4 18.5z"/><path d="M20 5.5c0-.8-.7-1.5-1.5-1.5H13v16h5.5c.8 0 1.5-.7 1.5-1.5z"/></svg>',
+ cal:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg>',
+ calS:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#66766E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg>',
+ pen:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l1-4L16.5 4.5a2 2 0 0 1 3 3L8 19z"/></svg>',
+ chart:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 20V11M12 20V4M19 20v-6"/></svg>',
+ moon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7A4A06" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>',
+ sun:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#17624B" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6L17 7M7 17l-1.4 1.4"/></svg>',
+ logo:'<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#FDF0D9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M18.7 5.3l-1.6 1.6M6.9 17.1l-1.6 1.6"/></svg>',
+ clock:'<svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#17624B" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>'
+};
+function steps(n){return '<div class="steps" role="img" aria-label="Langkah '+n+' dari 4">'+[1,2,3,4].map(function(i){return '<i class="'+(i<=n?'on':'')+'"></i>';}).join('')+'</div>';}
+function route(){return {PRETEST:"pretest",EDUKASI:"materi",MENUNGGU_VERIFIKASI:"tunggu",TERVERIFIKASI:"beranda"}[S.status];}
+function readCount(){return BOOKS.filter(function(b){return S.read[b.id];}).length;}
+function firstName(){var n=(S.form.nama||"").trim().split(/\s+/)[0]; return n||"Aisyah";}
+function toast(msg){var t=$("#toast"); if(!t)return; t.textContent=msg; t.classList.add("on"); clearTimeout(toastTimer); toastTimer=setTimeout(function(){t.classList.remove("on");},2400);}
+function nav(active){
+  var items=[["beranda","Beranda",I.home],["materi","Materi",I.book],["planner","Rencana",I.cal],["food","Catat",I.pen],["rekap","Rekap",I.chart]];
+  return '<nav class="nav" aria-label="Menu utama">'+items.map(function(it){
+    return '<button type="button" data-act="go" data-to="'+it[0]+'"'+(it[0]===active?' aria-current="page"':'')+'>'+it[2]+it[1]+'</button>';
+  }).join('')+'</nav>';
+}
+function checkWork(ok){ return ok? '<span class="pill ok">'+I.check+'Selesai</span>' : '<span class="pill mute">Belum dibaca</span>'; }
+
+/* ================= Screens ================= */
+function vLogin(){
+  return '<div class="scr"><div class="body" style="gap:28px">'+
+   '<div style="display:flex;flex-direction:column;gap:16px"><div class="logo">'+I.logo+'</div>'+
+   '<div style="display:flex;flex-direction:column;gap:8px"><h1 class="t xl">Breakfast Planner</h1><p class="lead">Rencanakan dan catat sarapanmu selama 3 minggu.</p></div></div>'+
+   '<div class="card"><h2 style="margin:0;font-size:18px;font-weight:700">Masuk</h2>'+
+   '<div class="field"><label for="l-email">Email</label><input id="l-email" class="inp" type="email" placeholder="nama@email.com" autocomplete="off" data-f="lemail"></div>'+
+   '<div class="field"><label for="l-sandi">Kata sandi</label><input id="l-sandi" class="inp" type="password" placeholder="Kata sandimu" autocomplete="off" data-f="lsandi"></div>'+
+   '<button class="btn" type="button" data-act="login">Masuk</button></div>'+
+   '<div style="flex:1"></div>'+
+   '<p class="center" style="margin:0">Belum punya akun? <button class="link" type="button" data-act="go" data-to="register">Buat akun</button></p>'+
+   '</div></div>';
+}
+function fld(key,label,ph,extra){
+  var v=S.form[key], e=S.errors[key];
+  return '<div class="field"><label for="f-'+key+'">'+label+'</label>'+
+   (extra&&extra.wrap?'<div class="wrap">':'')+
+   '<input id="f-'+key+'" class="inp'+(e?' bad':'')+'" type="'+(extra&&extra.type||'text')+'" value="'+esc(v)+'" placeholder="'+esc(ph)+'" data-f="'+key+'" autocomplete="off"'+(extra&&extra.mode?' inputmode="'+extra.mode+'"':'')+(e?' aria-invalid="true" aria-describedby="e-'+key+'"':'')+'>'+
+   (extra&&extra.wrap?I.calS+'</div>':'')+
+   (e?'<p class="err" id="e-'+key+'">'+esc(e)+'</p>':'')+'</div>';
+}
+function vRegister(){
+  var e=S.errors.jk;
+  return '<div class="scr"><div class="body" style="gap:22px">'+
+   '<div style="display:flex;flex-direction:column;gap:14px">'+steps(1)+'<h1 class="t">Buat akun</h1><p class="lead">Isi data dirimu, lalu lanjut mengerjakan pretest.</p></div>'+
+   '<div class="card" style="gap:18px">'+
+   fld("nama","Nama lengkap","Contoh: Aisyah Putri")+
+   '<div class="field"><span class="lbl" id="jk-l">Jenis kelamin</span><div class="seg" role="group" aria-labelledby="jk-l">'+
+    ['Laki-laki','Perempuan'].map(function(j){return '<button type="button" data-act="jk" data-v="'+j+'" aria-pressed="'+(S.form.jk===j)+'">'+j+'</button>';}).join('')+'</div>'+
+    (e?'<p class="err">'+esc(e)+'</p>':'')+'</div>'+
+   fld("tgl","Tanggal lahir","Contoh: 14/03/2009",{wrap:1,mode:"numeric"})+
+   fld("sekolah","Asal sekolah","Contoh: SMAN 1 Jakarta")+
+   fld("email","Email","nama@email.com",{type:"email"})+
+   fld("sandi","Kata sandi","Minimal 8 karakter",{type:"password"})+
+   fld("kelas","Kelas","Contoh: XI IPA 2")+
+   '</div>'+
+   '<div style="display:flex;flex-direction:column;gap:14px;padding-bottom:4px"><button class="btn" type="button" data-act="register">Lanjut ke pretest</button>'+
+   '<p class="center" style="margin:0">Sudah punya akun? <button class="link" type="button" data-act="go" data-to="login">Masuk</button></p></div>'+
+   '</div></div>';
+}
+function vPretest(){
+  var n=QUIZ.length;
+  if(S.preDone){
+    return '<div class="scr"><div class="body" style="gap:22px">'+steps(2)+
+     '<h1 class="t">Pretest selesai</h1>'+
+     '<div class="card" style="align-items:flex-start;gap:10px"><span class="cap">Skor pretest</span><span class="big">'+S.score+'</span>'+
+     '<p class="lead" style="margin:0">'+Math.round(S.score/100*n)+' dari '+n+' soal terjawab benar.</p></div>'+
+     '<p class="lead" style="margin:0">Skor ini disimpan sebagai pembanding dengan posttest di akhir minggu ke-3. Berikutnya, baca kelima buku materi edukasi sampai selesai.</p>'+
+     '<div style="flex:1"></div><button class="btn" type="button" data-act="toMateri">Lanjut ke materi edukasi</button></div></div>';
+  }
+  var q=QUIZ[S.pq], sel=S.ans[S.pq];
+  return '<div class="scr"><div class="body" style="gap:22px">'+
+   '<div style="display:flex;flex-direction:column;gap:14px">'+steps(2)+
+   '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px"><h1 class="t" style="font-size:22px">Pretest pengetahuan gizi</h1><span style="font-size:14px;font-weight:600;color:var(--muted);white-space:nowrap">'+(S.pq+1)+' / '+n+'</span></div></div>'+
+   '<div class="card" style="gap:12px"><span class="cap">Soal '+(S.pq+1)+'</span><p style="margin:0;font-size:18px;line-height:1.45;font-weight:700">'+esc(q.q)+'</p></div>'+
+   '<div style="display:flex;flex-direction:column;gap:12px">'+q.o.map(function(o,i){
+     var on=sel===i;
+     return '<button class="opt" type="button" data-act="ans" data-i="'+i+'" aria-pressed="'+on+'"><span class="dot">'+(on?'<span style="color:#fff;display:flex">'+I.check+'</span>':'')+'</span><span>'+esc(o)+'</span></button>';
+   }).join('')+'</div>'+
+   '<div style="flex:1"></div>'+
+   '<div class="row">'+(S.pq>0?'<button class="btn line fit" type="button" data-act="prev">Kembali</button>':'')+
+   '<button class="btn" type="button" data-act="next"'+(sel===null?' disabled':'')+'>'+(S.pq===n-1?'Selesai':'Lanjut')+'</button></div>'+
+   '</div></div>';
+}
+function vMateri(){
+  var rc=readCount(), onb=(S.status==="EDUKASI"||S.status==="MENUNGGU_VERIFIKASI"), ver=S.status==="TERVERIFIKASI";
+  var h='<div class="scr"><div class="body'+(ver?'':'')+'" style="gap:18px">'+
+   '<div style="display:flex;flex-direction:column;gap:14px">'+(onb?steps(3):'')+
+   '<h1 class="t">Materi edukasi</h1><p class="lead">'+(onb?'Baca kelima buku ini sampai selesai sebelum akunmu diverifikasi.':'Seri Edukasi Gizi Sarapan. Kamu bisa membacanya lagi kapan saja.')+'</p></div>'+
+   '<div class="card sm" style="gap:10px"><div style="display:flex;justify-content:space-between;align-items:baseline"><strong style="font-size:15px">'+rc+' dari 5 buku selesai</strong>'+(onb?'<span class="pill warn">Wajib</span>':'<span class="pill ok">'+I.check+'Lengkap</span>')+'</div><div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="5" aria-valuenow="'+rc+'"><i style="width:'+(rc*20)+'%"></i></div></div>'+
+   '<div style="display:flex;flex-direction:column;gap:12px">'+BOOKS.map(function(b){
+     var d=!!S.read[b.id];
+     return '<button class="bk'+(d?' done':'')+'" type="button" data-act="open" data-id="'+b.id+'"><div class="num" aria-hidden="true"><small>BUKU</small>'+b.id+'</div>'+
+       '<div class="tx"><strong>'+esc(b.title)+'</strong><span>'+b.nsec+' bab · sekitar '+b.min+' menit</span></div>'+'<span class="mk'+(d?' on':'')+'" role="img" aria-label="'+(d?'Selesai dibaca':'Belum dibaca')+'">'+(d?I.check:'')+'</span></button>';
+   }).join('')+'</div>'+
+   '<p class="src" style="margin:0">Sumber utama: Buku Menu Sarapan Aksi Bergizi, Kemenkes RI dan UNICEF (2024).</p>'+
+   '</div>';
+  if(onb){
+    h+='<div class="foot"><button class="btn" type="button" data-act="toTunggu"'+(S.status==="MENUNGGU_VERIFIKASI"?'':' disabled')+'>Lanjut ke verifikasi</button>'+
+       (S.status==="MENUNGGU_VERIFIKASI"?'':'<p class="center" style="margin:0;font-size:12.5px">Selesaikan semua buku untuk lanjut.</p>')+'</div>';
+  } else h+=nav("materi");
+  return h+'</div>';
+}
+function secHtml(s){
+  var h='<section class="sec" id="sec-'+s.n.replace('.','-')+'"><h2><em>'+s.n+'</em>'+esc(s.t)+'</h2>';
+  (s.p||[]).forEach(function(p){h+='<p>'+esc(p)+'</p>';});
+  if(s.chips)h+='<div class="chips" aria-hidden="false">'+s.chips.map(function(c){return '<span class="pill ok" style="font-size:13px;padding:7px 12px">'+esc(c)+'</span>';}).join('')+'</div>';
+  if(s.groups)s.groups.forEach(function(g){h+='<div><p class="sub3">'+esc(g.t)+'</p><div class="chips">'+g.c.map(function(c){return '<span class="pill ok" style="font-size:13px;padding:7px 12px">'+esc(c)+'</span>';}).join('')+'</div></div>';});
+  if(s.stats)h+='<div class="stats">'+s.stats.map(function(x){return '<div><strong>'+x[0]+'</strong><span>'+esc(x[1])+'</span></div>';}).join('')+'</div>';
+  if(s.menus)h+='<div class="menus">'+s.menus.map(function(m){return '<div><strong>'+esc(m[0])+'</strong><span>'+esc(m[1])+'</span></div>';}).join('')+'</div>';
+  if(s.table)h+='<div style="overflow-x:auto"><table class="tbl"><thead><tr>'+s.table.h.map(function(x){return '<th scope="col">'+esc(x)+'</th>';}).join('')+'</tr></thead><tbody>'+s.table.r.map(function(r){return '<tr>'+r.map(function(c){return '<td>'+esc(c)+'</td>';}).join('')+'</tr>';}).join('')+'</tbody></table></div>';
+  if(s.ul)h+='<ul class="ul">'+s.ul.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul>';
+  if(s.ol)h+='<ol class="ol">'+s.ol.map(function(x){return '<li><span>'+esc(x)+'</span></li>';}).join('')+'</ol>';
+  if(s.steps)h+='<ol class="ol">'+s.steps.map(function(x){return '<li><span>'+esc(x)+'</span></li>';}).join('')+'</ol>';
+  if(s.mf)h+='<div class="mf">'+s.mf.map(function(x){return '<div><div class="m"><b>MITOS</b>'+esc(x.m)+'</div><div class="f"><b>FAKTA</b>'+esc(x.f)+'</div></div>';}).join('')+'</div>';
+  (s.p2||[]).forEach(function(p){h+='<p>'+esc(p)+'</p>';});
+  function renderCo(co){
+    if(!co) return '';
+    var ch='<div class="callout'+(co.g?' green':'')+'"><b>'+esc(co.l)+'</b>';
+    if(co.t) ch+='<p>'+esc(co.t)+'</p>';
+    if(co.items) ch+='<ul class="ul" style="font-size:14px;margin:4px 0 0;padding-left:18px">'+co.items.map(function(it){return '<li>'+esc(it)+'</li>';}).join('')+'</ul>';
+    ch+='</div>';
+    return ch;
+  }
+  if(s.co) h+=renderCo(s.co);
+  if(s.co2) h+=renderCo(s.co2);
+  return h+'</section>';
+}
+function vBaca(){
+  var b=BOOKS[S.book-1], done=!!S.read[b.id], end=!!S.reached[b.id]||done;
+  return '<div class="scr"><div class="rtop"><div class="r1"><button type="button" data-act="back">'+I.back+'Materi</button><span>Buku '+b.id+' dari 5</span></div>'+
+   '<div class="bar thin" role="progressbar" aria-label="Progres membaca" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="rbar"><i id="rfill" style="width:0%"></i></div></div>'+
+   '<div class="body tight" id="rbody" style="gap:26px">'+
+   '<div style="display:flex;flex-direction:column;gap:10px"><span class="cap">Buku '+b.id+' dari 5</span><h1 class="t" style="font-size:26px">'+esc(b.title)+'</h1><p class="lead" style="margin:0">'+esc(b.tag)+'</p></div>'+
+   '<div class="card sm" style="gap:10px"><span class="cap">Yang akan kamu pelajari</span><ul class="ul" style="font-size:14.5px">'+b.goals.map(function(g){return '<li>'+esc(g)+'</li>';}).join('')+'</ul></div>'+
+   '<div class="callout"><b>'+esc(b.story.l)+'</b><p>'+esc(b.story.t)+'</p></div>'+
+   '<div class="secnav" role="navigation" aria-label="Daftar bab">'+b.secs.map(function(s){return '<button type="button" data-act="sec" data-n="'+s.n.replace('.','-')+'">'+s.n+'</button>';}).join('')+'<button type="button" data-act="sec" data-n="sum">Rangkuman</button></div>'+
+   b.secs.map(secHtml).join('')+
+   '<section class="sec" id="sec-sum"><h2>Rangkuman</h2><ul class="ul">'+b.sum.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul>'+
+   '<div class="callout green"><b>Pesan penting</b><p>'+esc(b.msg)+'</p></div></section>'+
+   '<p class="src" style="margin:0">Digital Breakfast Planner, Buku '+b.id+' dari 5. '+(b.src ? esc(b.src) : 'Sumber utama: Buku Menu Sarapan Aksi Bergizi, Kemenkes RI dan UNICEF (2024).')+'</p>'+
+   '</div>'+
+   '<div class="foot"><button class="btn" type="button" id="rdone" data-act="markRead"'+(end?'':' disabled')+'>'+(done?'Sudah selesai, kembali ke daftar':'Tandai selesai dibaca')+'</button>'+
+   '<p class="center" id="rhint" style="margin:0;font-size:12.5px"'+(end?' hidden':'')+'>Gulir sampai rangkuman untuk menandai selesai.</p></div></div>';
+}
+function vTunggu(){
+  function row(ok,t,s){return '<div style="display:flex;gap:12px;align-items:center"><span style="width:28px;height:28px;border-radius:14px;flex:none;display:flex;align-items:center;justify-content:center;'+(ok?'background:var(--green);color:#fff':'background:var(--orange-lt);color:var(--orange-dk);border:2px solid var(--orange)')+'">'+(ok?I.check:'<span style="font-weight:800;font-size:12px">…</span>')+'</span><div style="display:flex;flex-direction:column"><strong style="font-size:14.5px">'+t+'</strong><span style="font-size:12.5px;color:var(--muted)">'+s+'</span></div></div>';}
+  return '<div class="scr"><div class="body" style="gap:22px">'+steps(4)+
+   '<div style="display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center;padding-top:8px"><div style="width:96px;height:96px;border-radius:48px;background:var(--green-lt);display:flex;align-items:center;justify-content:center">'+I.clock+'</div>'+
+   '<h1 class="t">Menunggu verifikasi</h1><p class="lead" style="margin:0">Petugas akan mewawancarai kamu untuk mengisi formulir SQ-FFQ. Setelah selesai, akunmu terverifikasi dan Beranda terbuka.</p></div>'+
+   '<div class="card sm" style="gap:16px">'+
+   row(true,'Data diri','Sudah diisi')+row(true,'Pretest','Skor '+(S.score==null?'80':S.score))+row(true,'Materi edukasi','5 dari 5 buku selesai')+row(false,'Wawancara SQ-FFQ','Dilakukan petugas di sekolah')+'</div>'+
+   '<div style="flex:1"></div>'+
+   '<div style="display:flex;flex-direction:column;gap:10px"><button class="btn" type="button" data-act="cek">Cek status</button>'+
+   '<button class="btn line" type="button" data-act="go" data-to="materi">Baca materi lagi</button></div></div></div>';
+}
+function planNames(){return ["pokok","lauk","sayur","buah"].map(function(k){return S.plan[k];}).filter(Boolean);}
+function vBeranda(){
+  var rc=readCount(), saved=S.plan.saved, frs=S.fr.saved;
+  return '<div class="scr"><div class="body" style="padding-top:56px;gap:20px">'+
+   '<div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:14px;color:var(--muted)">Selasa malam, 3 Nov 2026</span><h1 class="t" style="font-size:26px;letter-spacing:-.4px">Halo, '+esc(firstName())+'</h1></div>'+
+   '<div style="background:var(--green);color:#fff;border-radius:22px;padding:20px;display:flex;flex-direction:column;gap:16px"><div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px"><strong style="font-size:17px">Program 3 minggu</strong><span style="font-size:13px;color:#CDE8DB">Minggu 1 · Hari ke-2</span></div>'+
+   '<div style="display:flex;gap:8px" role="img" aria-label="Minggu 1 dari 3"><div style="flex:1;height:8px;border-radius:4px;background:#F2A33A"></div><div style="flex:1;height:8px;border-radius:4px;background:#3E8A71"></div><div style="flex:1;height:8px;border-radius:4px;background:#3E8A71"></div></div>'+
+   '<span style="font-size:13px;color:#CDE8DB">Rencana terpenuhi '+(1+(S.todayStatus==="sesuai"?1:0))+' dari '+(2+(S.todayStatus?1:0))+' hari</span></div>'+
+   '<div class="card" style="border:2px solid var(--orange);gap:14px"><div style="display:flex;gap:12px;align-items:center"><div class="ico" style="width:44px;height:44px;background:var(--orange-lt)">'+I.moon+'</div><div style="display:flex;flex-direction:column;gap:2px"><strong style="font-size:16px">Malam ini</strong><span style="font-size:13px;color:var(--muted)">'+(saved?'Rencana Rabu pagi tersimpan: '+esc(planNames().join(', ')):'Belum ada rencana untuk Rabu pagi')+'</span></div></div>'+
+   '<button class="btn '+(saved?'outline':'amber')+'" type="button" data-act="go" data-to="planner">'+(saved?'Ubah rencana':'Rencanakan sarapan besok')+'</button></div>'+
+   '<div class="card" style="gap:14px"><div style="display:flex;gap:12px;align-items:center"><div class="ico" style="width:44px;height:44px">'+I.sun+'</div><div style="display:flex;flex-direction:column;gap:2px"><strong style="font-size:16px">Pagi hari</strong><span style="font-size:13px;color:var(--muted)">'+(frs?'Food record hari ini sudah tersimpan':'Catat apa yang kamu makan setelah sarapan')+'</span></div></div>'+
+   '<button class="btn outline" type="button" data-act="go" data-to="food">'+(frs?'Lihat food record':'Buka food record')+'</button></div>'+
+   '<button class="bk" type="button" data-act="go" data-to="materi"><div class="ico" style="color:var(--green)">'+I.book+'</div><div class="tx"><strong>Materi edukasi</strong><span>'+rc+' dari 5 buku selesai</span></div><span class="pill ok">'+I.check+'Lengkap</span></button>'+
+   '</div>'+nav("beranda")+'</div>';
+}
+function vPlanner(){
+  var P=S.plan, filled=["pokok","lauk","sayur","buah"].filter(function(k){return P[k];}).length;
+  function chips(k){return '<div class="chips">'+PICK[k].o.map(function(o){return '<button class="chip" type="button" data-act="pick" data-k="'+k+'" data-v="'+esc(o)+'" aria-pressed="'+(P[k]===o)+'">'+esc(o)+'</button>';}).join('')+'</div>';}
+  return '<div class="scr"><div class="body" style="gap:20px">'+
+   '<div style="display:flex;flex-direction:column;gap:4px"><span class="cap">Rencana sarapan</span><h1 class="t">Rabu, 4 Nov 2026</h1></div>'+
+   '<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:14px;font-weight:700">Jam sarapan</span><div class="seg" role="group" aria-label="Jam sarapan">'+["06.00","06.30","07.00"].map(function(j){return '<button type="button" data-act="jam" data-v="'+j+'" aria-pressed="'+(P.jam===j)+'">'+j+'</button>';}).join('')+'</div></div>'+
+   '<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:14px;font-weight:700">Tempat</span><div class="seg" role="group" aria-label="Tempat">'+["Rumah","Sekolah","Jajan"].map(function(j){return '<button type="button" data-act="tempat" data-v="'+j+'" aria-pressed="'+(P.tempat===j)+'">'+j+'</button>';}).join('')+'</div></div>'+
+   '<div class="card sm" style="background:var(--green-lt);border-color:#B9DCCB;gap:8px"><div style="display:flex;justify-content:space-between;align-items:baseline"><strong style="font-size:14px;color:var(--green-dk)">Komponen terisi</strong><strong style="font-size:14px;color:var(--green-dk)">'+filled+' / 4</strong></div><div class="bar thin" style="background:#fff"><i style="width:'+(filled*25)+'%"></i></div>'+
+   '<span style="font-size:12.5px;color:var(--green-dk)">'+(filled===4?'Menu lengkap: pokok, lauk, sayur, dan buah.':'Lengkapi pokok, lauk, sayur, dan buah.')+'</span></div>'+
+   ["pokok","lauk","sayur","buah","minuman"].map(function(k){return '<div style="display:flex;flex-direction:column;gap:10px"><div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:14px;font-weight:700">'+PICK[k].t+'</span><span style="font-size:12.5px;color:var(--muted)">'+(P[k]?esc(P[k]):(k==="minuman"?'Opsional':'Belum dipilih'))+'</span></div>'+chips(k)+'</div>';}).join('')+
+   '</div><div class="foot"><button class="btn" type="button" data-act="savePlan"'+(filled<4?' disabled':'')+'>Simpan rencana</button></div>'+nav("planner")+'</div>';
+}
+function buildFR(){
+  var items=[]; ["pokok","lauk","sayur","buah","minuman"].forEach(function(k){
+    if(S.plan[k]) items.push({k:k,nama:S.plan[k],urt:PICK[k].urt,gram:String(PICK[k].g),st:"s",ket:"",custom:false});
+  });
+  S.fr.items=items; S.fr.waktu=S.plan.jam.replace("06.30","06.35"); S.fr.tempat=S.plan.tempat;
+}
+function vFood(){
+  if(!S.fr.items) buildFR();
+  var F=S.fr;
+  var h='<div class="scr"><div class="body" style="gap:16px">'+
+   '<div style="display:flex;flex-direction:column;gap:4px"><span class="cap">Food record</span><h1 class="t">Rabu, 4 Nov 2026</h1></div>'+
+   '<div class="row"><div class="field" style="flex:1"><label for="fr-w">Waktu</label><input id="fr-w" class="inp sm" value="'+esc(F.waktu)+'" data-fr="waktu"></div><div class="field" style="flex:1"><label for="fr-t">Tempat</label><input id="fr-t" class="inp sm" value="'+esc(F.tempat)+'" data-fr="tempat"></div></div>'+
+   '<div style="display:flex;align-items:center;gap:10px;background:'+(S.plan.saved?'var(--green-lt)':'var(--orange-lt)')+';border-radius:14px;padding:12px 14px;color:'+(S.plan.saved?'var(--green-dk)':'var(--orange-dk)')+'"><span style="flex:none;display:flex">'+I.cal.replace('width="24" height="24"','width="20" height="20"')+'</span><span style="font-size:13px;line-height:1.4">'+(S.plan.saved?'Terisi otomatis dari rencana semalam. Ubah kalau berbeda.':'Rencana belum disimpan, jadi isian ini memakai contoh dari Planner.')+'</span></div>'+
+   '<button class="opt" type="button" data-act="tidak" aria-pressed="'+F.tidak+'" style="min-height:52px"><span class="dot">'+(F.tidak?'<span style="color:#fff;display:flex">'+I.check+'</span>':'')+'</span><span>Saya tidak sarapan hari ini</span></button>';
+  if(!F.tidak){
+    F.items.forEach(function(it,i){
+      var off=it.st==="t";
+      h+='<div class="card sm foodcard'+(off?' off':'')+'"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px">'+
+        (it.custom?'<input class="inp sm" style="flex:1" value="'+esc(it.nama)+'" aria-label="Nama makanan" data-fi="'+i+'" data-k="nama">':'<strong style="font-size:16px">'+esc(it.nama)+'</strong>')+
+        '<span class="pill '+(it.st==="s"?'ok':it.st==="d"?'warn':'mute')+'">'+(it.st==="s"?I.check+'Sesuai rencana':it.st==="d"?I.minus+'Diubah':it.custom?'Tambahan':'Tidak dimakan')+'</span></div>'+
+        '<div class="stt" role="group" aria-label="Status '+esc(it.nama)+'">'+[["s","Sesuai","s"],["d","Diubah","d"],["t","Tidak dimakan","t"]].map(function(x){return '<button type="button" class="'+x[2]+'" data-act="frs" data-i="'+i+'" data-v="'+x[0]+'" aria-pressed="'+(it.st===x[0])+'">'+x[1]+'</button>';}).join('')+'</div>'+
+        '<div class="row"><div class="field" style="flex:1"><label for="u'+i+'" style="font-size:12px;color:var(--muted);font-weight:500">URT</label><input id="u'+i+'" class="inp sm" value="'+esc(it.urt)+'" data-fi="'+i+'" data-k="urt"'+(off?' disabled':'')+'></div>'+
+        '<div class="field" style="width:96px"><label for="g'+i+'" style="font-size:12px;color:var(--muted);font-weight:500">Gram</label><input id="g'+i+'" class="inp sm" inputmode="numeric" value="'+esc(off?'0':it.gram)+'" data-fi="'+i+'" data-k="gram"'+(off?' disabled':'')+'></div></div>'+
+        (it.st==="d"?'<div class="field"><label for="k'+i+'" style="font-size:12px;color:var(--muted);font-weight:500">Keterangan</label><input id="k'+i+'" class="inp sm" placeholder="Contoh: rencana rebus, jadinya dadar" value="'+esc(it.ket)+'" data-fi="'+i+'" data-k="ket"></div>':'')+
+        '</div>';
+    });
+    h+='<button class="btn ghost" type="button" data-act="frAdd">'+I.plus+'Tambah makanan lain</button>';
+  }
+  return h+'</div><div class="foot"><button class="btn" type="button" data-act="saveFR">Simpan catatan</button></div>'+nav("food")+'</div>';
+}
+function rekapDays(){
+  var w=S.week; if(w!==1) return [null,null,null,null,null,null,null];
+  return ["sesuai","sebagian",S.todayStatus,null,null,null,null];
+}
+function vRekap(){
+  var days=rekapDays(), nm=["Sen","Sel","Rab","Kam","Jum","Sab","Min"];
+  var full=["Senin","Selasa","Rabu","Kamis","Jumat","Sabtu","Minggu"];
+  function dot(s){
+    if(s==="sesuai")return '<span class="dot2 s" style="color:#fff">'+I.check.replace('width="14" height="14"','width="16" height="16"')+'</span>';
+    if(s==="sebagian")return '<span class="dot2 p" style="color:#2B1A02">'+I.minus+'</span>';
+    if(s==="tidak")return '<span class="dot2 x" style="color:#fff">'+I.x+'</span>';
+    return '<span class="dot2 n"></span>';
+  }
+  function lbl(s){return {sesuai:"Sesuai rencana",sebagian:"Sebagian sesuai",tidak:"Tidak sesuai",undefined:"Belum dicatat"}[s]||"Belum dicatat";}
+  var rec=days.filter(Boolean), ok=days.filter(function(d){return d==="sesuai";}).length;
+  var wk=[1,2,3].map(function(w){
+    if(w!==1) return '<div style="display:flex;flex-direction:column;gap:6px"><div style="display:flex;justify-content:space-between;font-size:13px"><span style="font-weight:600">Minggu '+w+'</span><span style="color:var(--muted)">Belum dimulai</span></div><div class="bar"></div></div>';
+    return '<div style="display:flex;flex-direction:column;gap:6px"><div style="display:flex;justify-content:space-between;font-size:13px"><span style="font-weight:600">Minggu 1</span><strong>'+ok+' / '+rec.length+' hari</strong></div><div class="bar"><i style="width:'+(rec.length?Math.round(ok/rec.length*100):0)+'%"></i></div></div>';
+  }).join('');
+  var detail='';
+  if(S.day!==null){
+    var s=days[S.day];
+    detail='<div class="card sm" style="gap:6px"><div style="display:flex;justify-content:space-between;align-items:center"><strong>'+full[S.day]+'</strong><span class="pill '+(s==="sesuai"?'ok':s==="sebagian"?'warn':s==="tidak"?'bad':'mute')+'">'+lbl(s)+'</span></div>'+
+     '<span style="font-size:13px;color:var(--muted);line-height:1.5">'+(S.day===0?'Rencana: nasi, telur dadar, tumis bayam, pepaya. Dimakan sama persis.':S.day===1?'Rencana: ubi rebus, ikan goreng, tumis sayuran, jeruk. Sayur tidak dimakan.':S.day===2&&s?(S.fr.items?S.fr.items.filter(function(x){return x.st!=="s";}).length+' dari '+S.fr.items.length+' item berbeda dari rencana.':''):'Belum ada catatan untuk hari ini.')+'</span></div>';
+  }
+  return '<div class="scr"><div class="body" style="gap:18px"><h1 class="t">Rekap progres</h1>'+
+   '<div class="tabs" role="group" aria-label="Pilih minggu">'+[1,2,3].map(function(w){return '<button type="button" data-act="week" data-v="'+w+'" aria-pressed="'+(S.week===w)+'">Minggu '+w+'</button>';}).join('')+'</div>'+
+   '<div class="card" style="gap:14px"><div style="display:flex;justify-content:space-between;align-items:baseline"><strong style="font-size:16px">Minggu '+S.week+'</strong><span style="font-size:13px;color:var(--muted)">Rencana vs realisasi</span></div>'+
+   '<div class="days">'+nm.map(function(n,i){return '<button class="day" type="button" data-act="day" data-i="'+i+'" aria-pressed="'+(S.day===i)+'" aria-label="'+full[i]+': '+lbl(days[i])+'">'+dot(days[i])+n+'</button>';}).join('')+'</div>'+
+   '<div class="legend"><span><i style="background:var(--green)"></i>Sesuai</span><span><i style="background:var(--orange)"></i>Sebagian</span><span><i style="background:var(--red)"></i>Tidak sesuai</span><span><i style="border:1.5px dashed #8FA196"></i>Belum</span></div></div>'+
+   detail+
+   '<div class="card" style="gap:14px"><strong style="font-size:16px">Kepatuhan rencana</strong>'+wk+'</div>'+
+   '<div class="row"><div style="flex:1;background:var(--green-lt);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;font-weight:600;color:var(--green-dk)">Pretest</span><strong style="font-size:26px;color:var(--green-dk)">'+(S.score==null?80:S.score)+'</strong></div>'+
+   '<div style="flex:1;background:#fff;border:1.5px dashed #8FA196;border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;font-weight:600;color:var(--muted)">Posttest</span><span style="font-size:14px;font-weight:700;color:var(--muted);line-height:1.3">Terbuka setelah minggu 3</span></div></div>'+
+   '</div>'+nav("rekap")+'</div>';
+}
+const VIEWS={login:vLogin,register:vRegister,pretest:vPretest,materi:vMateri,baca:vBaca,tunggu:vTunggu,beranda:vBeranda,planner:vPlanner,food:vFood,rekap:vRekap};
+
+/* ================= Render ================= */
+function render(){
+  var ph=$("#phone");
+  ph.innerHTML=VIEWS[S.screen]()+'<div class="toast" id="toast" role="status" aria-live="polite"></div>';
+  if(S.screen==="baca"){
+    var body=$("#rbody"), fill=$("#rfill");
+    body.addEventListener("scroll",function(){
+      var max=body.scrollHeight-body.clientHeight, p=max>0?body.scrollTop/max:1;
+      fill.style.width=Math.round(p*100)+"%"; $("#rbar").setAttribute("aria-valuenow",Math.round(p*100));
+      if(p>=0.93 && !S.reached[S.book]){
+        S.reached[S.book]=true; var b=$("#rdone"); if(b)b.disabled=false; var h=$("#rhint"); if(h)h.hidden=true;
+      }
+    },{passive:true});
+  }
+  renderPanel();
+}
+function renderPanel(){
+  var idx=STATUS.findIndex(function(s){return s[0]===S.status;});
+  $("#statusList").innerHTML=STATUS.map(function(s,i){
+    var dn=(i<idx||idx===3), cls=dn?'done':i===idx?'now':'';
+    return '<div class="stat-row '+cls+'"><i>'+(dn?I.check.replace('width="14" height="14"','width="12" height="12"'):i+1)+'</i><span>'+s[1]+'</span></div>';
+  }).join('');
+  var g="", html="";
+  SCREENS.forEach(function(s,i){
+    if(s[2]!==g){g=s[2]; html+='<div class="grp">'+g+'</div>';}
+    html+='<button type="button" data-act="jump" data-to="'+s[0]+'"'+(S.screen===s[0]?' aria-current="true"':'')+'><span class="n">'+(i+1)+'</span>'+s[1]+'</button>';
+  });
+  $("#jumpList").innerHTML=html;
+  $("#toolVerify").disabled = S.status!=="MENUNGGU_VERIFIKASI";
+  $("#toolFill").disabled = S.screen!=="register";
+}
+
+/* ================= Logika ================= */
+function syncRead(){ // meniru trigger: semua buku wajib terbaca -> MENUNGGU_VERIFIKASI
+  if(S.status==="EDUKASI" && readCount()===BOOKS.length) S.status="MENUNGGU_VERIFIKASI";
+}
+function jump(to){
+  function all(){BOOKS.forEach(function(b){S.read[b.id]=true;});}
+  if(to==="login"||to==="register"||to==="pretest"){
+    S.status="PRETEST"; S.read={}; S.preDone=false; S.pq=0; S.ans=[null,null,null,null,null]; S.errors={};
+  } else if(to==="materi"||to==="baca"){
+    S.status="EDUKASI"; S.preDone=true; if(S.score==null)S.score=80;
+    S.read=(to==="baca")?{}:{1:true,2:true}; S.book=1;
+  } else if(to==="tunggu"){
+    all(); S.status="MENUNGGU_VERIFIKASI"; S.preDone=true; if(S.score==null)S.score=80;
+  } else {
+    all(); S.status="TERVERIFIKASI"; S.preDone=true; if(S.score==null)S.score=80;
+  }
+  S.screen=to; render();
+}
+function validate(){
+  var f=S.form, e={};
+  if(f.nama.trim().length<3)e.nama="Tulis nama lengkapmu.";
+  if(!f.jk)e.jk="Pilih jenis kelamin.";
+  var m=/^(\d{2})\/(\d{2})\/(\d{4})$/.exec(f.tgl);
+  if(!m)e.tgl="Tulis tanggal lahir dengan format hh/bb/tttt.";
+  else { var d=+m[1],mo=+m[2],y=+m[3], dt=new Date(y,mo-1,d); if(dt.getFullYear()!==y||dt.getMonth()!==mo-1||dt.getDate()!==d||y<1990||dt>new Date())e.tgl="Tanggal lahir tidak valid."; }
+  if(f.sekolah.trim().length<3)e.sekolah="Tulis asal sekolahmu.";
+  if(!/^\S+@\S+\.\S+$/.test(f.email))e.email="Tulis email yang valid, misalnya nama@email.com.";
+  if(f.sandi.length<8)e.sandi="Kata sandi minimal 8 karakter.";
+  if(f.kelas.trim().length<1)e.kelas="Tulis kelasmu.";
+  S.errors=e; return Object.keys(e).length===0;
+}
+
+document.addEventListener("click",function(ev){
+  var el=ev.target.closest("[data-act]"); if(!el||el.disabled)return;
+  var a=el.dataset.act, d=el.dataset;
+  switch(a){
+   case "go": S.screen=d.to; if(d.to==="login"||d.to==="register"){S.errors={};} render(); break;
+   case "jump": jump(d.to); break;
+   case "login": S.screen=route(); if(S.status==="PRETEST"){S.pq=0;} render(); break;
+   case "jk": S.form.jk=d.v; delete S.errors.jk; render(); break;
+   case "register": if(validate()){S.status="PRETEST";S.pq=0;S.preDone=false;S.screen="pretest";render();} else {render(); var bad=$("#phone .inp.bad"); if(bad)bad.focus();} break;
+   case "ans": S.ans[S.pq]=+d.i; render(); break;
+   case "prev": S.pq=Math.max(0,S.pq-1); render(); break;
+   case "next":
+     if(S.pq<QUIZ.length-1){S.pq++;render();}
+     else { var c=0; QUIZ.forEach(function(q,i){if(S.ans[i]===q.a)c++;}); S.score=Math.round(c/QUIZ.length*100); S.preDone=true; render(); }
+     break;
+   case "toMateri": S.status="EDUKASI"; syncRead(); S.screen="materi"; render(); break;
+   case "open": S.book=+d.id; S.screen="baca"; render(); break;
+   case "back": S.screen="materi"; render(); break;
+   case "sec": var t=$("#sec-"+d.n); if(t)t.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"start"}); break;
+   case "markRead":
+     if(!S.read[S.book]){ S.read[S.book]=true; syncRead(); S.screen="materi"; render(); toast("Buku "+S.book+" selesai dibaca"+(S.status==="MENUNGGU_VERIFIKASI"?". Semua materi wajib selesai.":".")); }
+     else { S.screen="materi"; render(); }
+     break;
+   case "toTunggu": S.screen="tunggu"; render(); break;
+   case "cek":
+     if(S.status==="TERVERIFIKASI"){S.screen="beranda";render();}
+     else toast("Belum terverifikasi. Petugas masih menyelesaikan SQ-FFQ.");
+     break;
+   case "pick": S.plan[d.k]=(S.plan[d.k]===d.v?null:d.v); S.plan.saved=false; render(); break;
+   case "jam": S.plan.jam=d.v; render(); break;
+   case "tempat": S.plan.tempat=d.v; render(); break;
+   case "savePlan": S.plan.saved=true; S.fr.items=null; S.screen="beranda"; render(); toast("Rencana untuk Rabu pagi tersimpan."); break;
+   case "tidak": S.fr.tidak=!S.fr.tidak; render(); break;
+   case "frs": var it=S.fr.items[+d.i]; it.st=d.v; render(); break;
+   case "frAdd": S.fr.items.push({k:"lain",nama:"Makanan tambahan",urt:"1 porsi",gram:"50",st:"d",ket:"",custom:true}); render(); break;
+   case "saveFR":
+     var its=S.fr.items||[], st;
+     if(S.fr.tidak) st="tidak";
+     else { var n=its.filter(function(x){return x.st==="s";}).length; st=(its.length&&n===its.length)?"sesuai":(n>0?"sebagian":"tidak"); }
+     S.todayStatus=st; S.fr.saved=true; S.screen="beranda"; render(); toast("Catatan tersimpan. Hasil masuk ke rekap."); break;
+   case "week": S.week=+d.v; S.day=null; render(); break;
+   case "day": S.day=(S.day===+d.i?null:+d.i); render(); break;
+   case "fill":
+     S.form={nama:"Aisyah Putri",jk:"Perempuan",tgl:"14/03/2009",sekolah:"SMAN 1 Jakarta",email:"aisyah@email.com",sandi:"sarapan123",kelas:"XI IPA 2"}; S.errors={}; render(); break;
+   case "verify": if(S.status==="MENUNGGU_VERIFIKASI"){S.status="TERVERIFIKASI"; S.screen="beranda"; render(); toast("Petugas menyelesaikan SQ-FFQ. Akun terverifikasi.");} break;
+   case "reset": S=fresh(); render(); break;
+  }
+});
+document.addEventListener("input",function(ev){
+  var t=ev.target;
+  if(t.dataset.f){
+    var k=t.dataset.f; if(k==="lemail"||k==="lsandi")return;
+    if(k==="tgl"){ var v=t.value.replace(/\D/g,"").slice(0,8); var o=v; if(v.length>4)o=v.slice(0,2)+"/"+v.slice(2,4)+"/"+v.slice(4); else if(v.length>2)o=v.slice(0,2)+"/"+v.slice(2); t.value=o; }
+    S.form[k]=t.value;
+    if(S.errors[k]){delete S.errors[k]; var p=$("#e-"+k); if(p)p.remove(); t.classList.remove("bad"); t.removeAttribute("aria-invalid");}
+  } else if(t.dataset.fr){ S.fr[t.dataset.fr]=t.value; }
+  else if(t.dataset.fi!==undefined){ var it=S.fr.items[+t.dataset.fi]; it[t.dataset.k]=t.value; }
+});
+
+/* ================= Ukuran perangkat ================= */
+function fit(){
+  var vw=document.documentElement.clientWidth, vh=window.innerHeight, s;
+  if(vw>=960){ s=Math.min(1,(vh-48)/864,(vw-320-32-64)/410); }
+  else { s=Math.min(1,(vw-32)/410); }
+  document.documentElement.style.setProperty("--s",Math.max(.4,s).toFixed(3));
+}
+window.addEventListener("resize",fit); fit();
+render();
+})();
+</script>
