@@ -1,3 +1,4 @@
+
 <title>Digital Breakfast Planner</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -205,7 +206,7 @@ h1.t.xl{font-size:30px; line-height:1.15; letter-spacing:-.5px}
       <button class="tool primary" id="toolVerify" type="button" data-act="verify">Simulasi: petugas selesaikan SQ-FFQ</button>
       <button class="tool" type="button" data-act="reset">Mulai ulang dari awal</button>
     </div>
-    <p class="hint" style="margin-top:10px">Di web admin, petugas mengisi SQ-FFQ. Begitu selesai, database mengubah status akun menjadi Terverifikasi dan Beranda siswa terbuka.</p>
+    <p class="hint" style="margin-top:10px">Di web admin, petugas mengisi SQ-FFQ. Begitu verifikasi selesai, siswa wajib membaca kelima materi edukasi secara lengkap sebelum Beranda terbuka.</p>
   </section>
 </aside>
 
@@ -308,11 +309,11 @@ const PICK = {
 
 const SCREENS = [
  ["login","Login","Onboarding"],["register","Buat akun","Onboarding"],["pretest","Pretest","Onboarding"],
- ["materi","Materi edukasi","Onboarding"],["baca","Baca materi","Onboarding"],["tunggu","Menunggu verifikasi","Onboarding"],
+ ["tunggu","Menunggu verifikasi","Onboarding"],["materi","Materi edukasi","Onboarding"],["baca","Baca materi","Onboarding"],
  ["beranda","Beranda","Program 3 minggu"],["planner","Planner sarapan","Program 3 minggu"],["food","Food record","Program 3 minggu"],["rekap","Rekap progres","Program 3 minggu"]
 ];
 const STATUS = [
- ["PRETEST","Data diri dan pretest"],["EDUKASI","Membaca materi edukasi"],["MENUNGGU_VERIFIKASI","Menunggu verifikasi"],["TERVERIFIKASI","Terverifikasi"]
+ ["PRETEST","Data diri dan pretest"],["MENUNGGU_VERIFIKASI","Wawancara SQ-FFQ"],["EDUKASI","Membaca materi edukasi"],["TERVERIFIKASI","Terverifikasi & Beranda"]
 ];
 
 /* ================= State ================= */
@@ -351,7 +352,7 @@ const I = {
  clock:'<svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#17624B" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>'
 };
 function steps(n){return '<div class="steps" role="img" aria-label="Langkah '+n+' dari 4">'+[1,2,3,4].map(function(i){return '<i class="'+(i<=n?'on':'')+'"></i>';}).join('')+'</div>';}
-function route(){return {PRETEST:"pretest",EDUKASI:"materi",MENUNGGU_VERIFIKASI:"tunggu",TERVERIFIKASI:"beranda"}[S.status];}
+function route(){return {PRETEST:"pretest",MENUNGGU_VERIFIKASI:"tunggu",EDUKASI:"materi",TERVERIFIKASI:"beranda"}[S.status]||"login";}
 function readCount(){return BOOKS.filter(function(b){return S.read[b.id];}).length;}
 function firstName(){var n=(S.form.nama||"").trim().split(/\s+/)[0]; return n||"Aisyah";}
 function toast(msg){var t=$("#toast"); if(!t)return; t.textContent=msg; t.classList.add("on"); clearTimeout(toastTimer); toastTimer=setTimeout(function(){t.classList.remove("on");},2400);}
@@ -410,8 +411,8 @@ function vPretest(){
      '<h1 class="t">Pretest selesai</h1>'+
      '<div class="card" style="align-items:flex-start;gap:10px"><span class="cap">Skor pretest</span><span class="big">'+S.score+'</span>'+
      '<p class="lead" style="margin:0">'+Math.round(S.score/100*n)+' dari '+n+' soal terjawab benar.</p></div>'+
-     '<p class="lead" style="margin:0">Skor ini disimpan sebagai pembanding dengan posttest di akhir minggu ke-3. Berikutnya, baca kelima buku materi edukasi sampai selesai.</p>'+
-     '<div style="flex:1"></div><button class="btn" type="button" data-act="toMateri">Lanjut ke materi edukasi</button></div></div>';
+     '<p class="lead" style="margin:0">Skor ini disimpan sebagai pembanding dengan posttest di akhir minggu ke-3. Langkah berikutnya adalah verifikasi akun oleh petugas melalui wawancara SQ-FFQ.</p>'+
+     '<div style="flex:1"></div><button class="btn" type="button" data-act="toTunggu">Lanjut ke verifikasi</button></div></div>';
   }
   var q=QUIZ[S.pq], sel=S.ans[S.pq];
   return '<div class="scr"><div class="body" style="gap:22px">'+
@@ -428,11 +429,20 @@ function vPretest(){
    '</div></div>';
 }
 function vMateri(){
-  var rc=readCount(), onb=(S.status==="EDUKASI"||S.status==="MENUNGGU_VERIFIKASI"), ver=S.status==="TERVERIFIKASI";
-  var h='<div class="scr"><div class="body'+(ver?'':'')+'" style="gap:18px">'+
-   '<div style="display:flex;flex-direction:column;gap:14px">'+(onb?steps(3):'')+
-   '<h1 class="t">Materi edukasi</h1><p class="lead">'+(onb?'Baca kelima buku ini sampai selesai sebelum akunmu diverifikasi.':'Seri Edukasi Gizi Sarapan. Kamu bisa membacanya lagi kapan saja.')+'</p></div>'+
-   '<div class="card sm" style="gap:10px"><div style="display:flex;justify-content:space-between;align-items:baseline"><strong style="font-size:15px">'+rc+' dari 5 buku selesai</strong>'+(onb?'<span class="pill warn">Wajib</span>':'<span class="pill ok">'+I.check+'Lengkap</span>')+'</div><div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="5" aria-valuenow="'+rc+'"><i style="width:'+(rc*20)+'%"></i></div></div>'+
+  if(S.status==="PRETEST" || S.status==="MENUNGGU_VERIFIKASI"){
+    return '<div class="scr"><div class="body" style="gap:22px;align-items:center;justify-content:center;text-align:center;padding:32px 20px">'+
+      '<div style="width:80px;height:80px;border-radius:40px;background:var(--orange-lt);display:flex;align-items:center;justify-content:center;color:var(--orange-dk);margin-top:40px">'+I.book+'</div>'+
+      '<h1 class="t" style="font-size:22px">Materi belum terbuka</h1>'+
+      '<p class="lead" style="margin:0">Materi edukasi dapat dibaca setelah akunmu diverifikasi oleh petugas melalui wawancara SQ-FFQ.</p>'+
+      '<div style="flex:1"></div>'+
+      '<button class="btn" type="button" data-act="go" data-to="tunggu">Kembali ke status verifikasi</button>'+
+      '</div></div>';
+  }
+  var rc=readCount(), onb=(S.status==="EDUKASI");
+  var h='<div class="scr"><div class="body" style="gap:18px">'+
+   '<div style="display:flex;flex-direction:column;gap:10px">'+(onb?steps(4):'')+
+   '<h1 class="t">Materi edukasi</h1><p class="lead">'+(onb?'Wawancara SQ-FFQ selesai! Baca kelima buku materi ini secara lengkap untuk membuka Beranda dan memulai program sarapan.':'Seri Edukasi Gizi Sarapan. Kamu bisa membaca ulang materi kapan saja.')+'</p></div>'+
+   '<div class="card sm" style="gap:10px"><div style="display:flex;justify-content:space-between;align-items:baseline"><strong style="font-size:15px">'+rc+' dari 5 buku selesai</strong>'+(rc===BOOKS.length?'<span class="pill ok">'+I.check+'Lengkap</span>':onb?'<span class="pill warn">Wajib lengkap ('+rc+'/5)</span>':'<span class="pill warn">'+rc+'/5 dibaca</span>')+'</div><div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="5" aria-valuenow="'+rc+'"><i style="width:'+(rc*20)+'%"></i></div></div>'+
    '<div style="display:flex;flex-direction:column;gap:12px">'+BOOKS.map(function(b){
      var d=!!S.read[b.id];
      return '<button class="bk'+(d?' done':'')+'" type="button" data-act="open" data-id="'+b.id+'"><div class="num" aria-hidden="true"><small>BUKU</small>'+b.id+'</div>'+
@@ -441,9 +451,11 @@ function vMateri(){
    '<p class="src" style="margin:0">Sumber utama: Buku Menu Sarapan Aksi Bergizi, Kemenkes RI dan UNICEF (2024).</p>'+
    '</div>';
   if(onb){
-    h+='<div class="foot"><button class="btn" type="button" data-act="toTunggu"'+(S.status==="MENUNGGU_VERIFIKASI"?'':' disabled')+'>Lanjut ke verifikasi</button>'+
-       (S.status==="MENUNGGU_VERIFIKASI"?'':'<p class="center" style="margin:0;font-size:12.5px">Selesaikan semua buku untuk lanjut.</p>')+'</div>';
-  } else h+=nav("materi");
+    h+='<div class="foot"><button class="btn" type="button" data-act="toBeranda"'+(rc===BOOKS.length?'':' disabled')+'>Lanjut ke Beranda</button>'+
+       (rc===BOOKS.length?'<p class="center" style="margin:0;font-size:12.5px;color:var(--green)">Semua materi selesai dibaca! Klik tombol di atas untuk membuka Beranda.</p>':'<p class="center" style="margin:0;font-size:12.5px">Wajib membaca kelima buku untuk membuka Beranda.</p>')+'</div>';
+  } else {
+    h+=nav("materi");
+  }
   return h+'</div>';
 }
 function secHtml(s){
@@ -472,6 +484,7 @@ function secHtml(s){
   return h+'</section>';
 }
 function vBaca(){
+  if(S.status==="PRETEST" || S.status==="MENUNGGU_VERIFIKASI") return vMateri();
   var b=BOOKS[S.book-1], done=!!S.read[b.id];
   return '<div class="scr">'+
    '<div class="rtop">'+
@@ -493,14 +506,13 @@ function vBaca(){
 }
 function vTunggu(){
   function row(ok,t,s){return '<div style="display:flex;gap:12px;align-items:center"><span style="width:28px;height:28px;border-radius:14px;flex:none;display:flex;align-items:center;justify-content:center;'+(ok?'background:var(--green);color:#fff':'background:var(--orange-lt);color:var(--orange-dk);border:2px solid var(--orange)')+'">'+(ok?I.check:'<span style="font-weight:800;font-size:12px">…</span>')+'</span><div style="display:flex;flex-direction:column"><strong style="font-size:14.5px">'+t+'</strong><span style="font-size:12.5px;color:var(--muted)">'+s+'</span></div></div>';}
-  return '<div class="scr"><div class="body" style="gap:22px">'+steps(4)+
+  return '<div class="scr"><div class="body" style="gap:22px">'+steps(3)+
    '<div style="display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center;padding-top:8px"><div style="width:96px;height:96px;border-radius:48px;background:var(--green-lt);display:flex;align-items:center;justify-content:center">'+I.clock+'</div>'+
-   '<h1 class="t">Menunggu verifikasi</h1><p class="lead" style="margin:0">Petugas akan mewawancarai kamu untuk mengisi formulir SQ-FFQ. Setelah selesai, akunmu terverifikasi dan Beranda terbuka.</p></div>'+
+   '<h1 class="t">Menunggu verifikasi</h1><p class="lead" style="margin:0">Petugas akan mewawancarai kamu untuk mengisi formulir SQ-FFQ. Setelah diverifikasi, kamu wajib membaca kelima materi edukasi sebelum Beranda terbuka.</p></div>'+
    '<div class="card sm" style="gap:16px">'+
-   row(true,'Data diri','Sudah diisi')+row(true,'Pretest','Skor '+(S.score==null?'80':S.score))+row(true,'Materi edukasi','5 dari 5 buku selesai')+row(false,'Wawancara SQ-FFQ','Dilakukan petugas di sekolah')+'</div>'+
+   row(true,'Data diri','Sudah diisi')+row(true,'Pretest','Skor '+(S.score==null?'80':S.score)+' · Selesai')+row(false,'Wawancara SQ-FFQ','Dilakukan petugas di sekolah')+row(false,'Materi edukasi','Wajib dibaca lengkap setelah verifikasi SQ-FFQ')+'</div>'+
    '<div style="flex:1"></div>'+
-   '<div style="display:flex;flex-direction:column;gap:10px"><button class="btn" type="button" data-act="cek">Cek status</button>'+
-   '<button class="btn line" type="button" data-act="go" data-to="materi">Baca materi lagi</button></div></div></div>';
+   '<div style="display:flex;flex-direction:column;gap:10px"><button class="btn" type="button" data-act="cek">Cek status verifikasi</button></div></div></div>';
 }
 function planNames(){return ["pokok","lauk","sayur","buah"].map(function(k){return S.plan[k];}).filter(Boolean);}
 function vBeranda(){
@@ -514,7 +526,7 @@ function vBeranda(){
    '<button class="btn '+(saved?'outline':'amber')+'" type="button" data-act="go" data-to="planner">'+(saved?'Ubah rencana':'Rencanakan sarapan besok')+'</button></div>'+
    '<div class="card" style="gap:14px"><div style="display:flex;gap:12px;align-items:center"><div class="ico" style="width:44px;height:44px">'+I.sun+'</div><div style="display:flex;flex-direction:column;gap:2px"><strong style="font-size:16px">Pagi hari</strong><span style="font-size:13px;color:var(--muted)">'+(frs?'Food record hari ini sudah tersimpan':'Catat apa yang kamu makan setelah sarapan')+'</span></div></div>'+
    '<button class="btn outline" type="button" data-act="go" data-to="food">'+(frs?'Lihat food record':'Buka food record')+'</button></div>'+
-   '<button class="bk" type="button" data-act="go" data-to="materi"><div class="ico" style="color:var(--green)">'+I.book+'</div><div class="tx"><strong>Materi edukasi</strong><span>'+rc+' dari 5 buku selesai</span></div><span class="pill ok">'+I.check+'Lengkap</span></button>'+
+   '<button class="bk" type="button" data-act="go" data-to="materi"><div class="ico" style="color:var(--green)">'+I.book+'</div><div class="tx"><strong>Materi edukasi</strong><span>'+rc+' dari 5 buku selesai</span></div><span class="pill '+(rc===5?'ok':rc>0?'warn':'mute')+'">'+(rc===5?I.check+'Lengkap':rc>0?rc+'/5 dibaca':'Mulai baca')+'</span></button>'+
    '</div>'+nav("beranda")+'</div>';
 }
 function vPlanner(){
@@ -603,20 +615,22 @@ function render(){
   ph.innerHTML=VIEWS[S.screen]()+'<div class="toast" id="toast" role="status" aria-live="polite"></div>';
   if(S.screen==="baca"){
     var body=$("#rbody"), fill=$("#rfill");
-    body.addEventListener("scroll",function(){
-      var max=body.scrollHeight-body.clientHeight, p=max>0?body.scrollTop/max:1;
-      fill.style.width=Math.round(p*100)+"%"; $("#rbar").setAttribute("aria-valuenow",Math.round(p*100));
-      if(p>=0.93 && !S.reached[S.book]){
-        S.reached[S.book]=true; var b=$("#rdone"); if(b)b.disabled=false; var h=$("#rhint"); if(h)h.hidden=true;
-      }
-    },{passive:true});
+    if(body && fill){
+      body.addEventListener("scroll",function(){
+        var max=body.scrollHeight-body.clientHeight, p=max>0?body.scrollTop/max:1;
+        fill.style.width=Math.round(p*100)+"%"; $("#rbar").setAttribute("aria-valuenow",Math.round(p*100));
+        if(p>=0.93 && !S.reached[S.book]){
+          S.reached[S.book]=true; var b=$("#rdone"); if(b)b.disabled=false; var h=$("#rhint"); if(h)h.hidden=true;
+        }
+      },{passive:true});
+    }
   }
   renderPanel();
 }
 function renderPanel(){
   var idx=STATUS.findIndex(function(s){return s[0]===S.status;});
   $("#statusList").innerHTML=STATUS.map(function(s,i){
-    var dn=(i<idx||idx===3), cls=dn?'done':i===idx?'now':'';
+    var dn=(i<idx||idx===STATUS.length-1), cls=dn?'done':i===idx?'now':'';
     return '<div class="stat-row '+cls+'"><i>'+(dn?I.check.replace('width="14" height="14"','width="12" height="12"'):i+1)+'</i><span>'+s[1]+'</span></div>';
   }).join('');
   var g="", html="";
@@ -630,18 +644,15 @@ function renderPanel(){
 }
 
 /* ================= Logika ================= */
-function syncRead(){ // meniru trigger: semua buku wajib terbaca -> MENUNGGU_VERIFIKASI
-  if(S.status==="EDUKASI" && readCount()===BOOKS.length) S.status="MENUNGGU_VERIFIKASI";
-}
 function jump(to){
   function all(){BOOKS.forEach(function(b){S.read[b.id]=true;});}
   if(to==="login"||to==="register"||to==="pretest"){
     S.status="PRETEST"; S.read={}; S.preDone=false; S.pq=0; S.ans=[null,null,null,null,null]; S.errors={};
+  } else if(to==="tunggu"){
+    S.status="MENUNGGU_VERIFIKASI"; S.read={}; S.preDone=true; if(S.score==null)S.score=80;
   } else if(to==="materi"||to==="baca"){
     S.status="EDUKASI"; S.preDone=true; if(S.score==null)S.score=80;
     S.read=(to==="baca")?{}:{1:true,2:true}; S.book=1;
-  } else if(to==="tunggu"){
-    all(); S.status="MENUNGGU_VERIFIKASI"; S.preDone=true; if(S.score==null)S.score=80;
   } else {
     all(); S.status="TERVERIFIKASI"; S.preDone=true; if(S.score==null)S.score=80;
   }
@@ -665,7 +676,16 @@ document.addEventListener("click",function(ev){
   var el=ev.target.closest("[data-act]"); if(!el||el.disabled)return;
   var a=el.dataset.act, d=el.dataset;
   switch(a){
-   case "go": S.screen=d.to; if(d.to==="login"||d.to==="register"){S.errors={};} render(); break;
+   case "go":
+     if((d.to==="materi"||d.to==="baca") && (S.status==="PRETEST"||S.status==="MENUNGGU_VERIFIKASI")){
+       toast("Materi edukasi dapat dibaca setelah verifikasi wawancara SQ-FFQ.");
+       return;
+     }
+     if((d.to==="beranda"||d.to==="planner"||d.to==="food"||d.to==="rekap") && S.status!=="TERVERIFIKASI"){
+       toast("Selesaikan membaca kelima materi edukasi secara lengkap terlebih dahulu.");
+       return;
+     }
+     S.screen=d.to; if(d.to==="login"||d.to==="register"){S.errors={};} render(); break;
    case "jump": jump(d.to); break;
    case "login": S.screen=route(); if(S.status==="PRETEST"){S.pq=0;} render(); break;
    case "jk": S.form.jk=d.v; delete S.errors.jk; render(); break;
@@ -676,18 +696,35 @@ document.addEventListener("click",function(ev){
      if(S.pq<QUIZ.length-1){S.pq++;render();}
      else { var c=0; QUIZ.forEach(function(q,i){if(S.ans[i]===q.a)c++;}); S.score=Math.round(c/QUIZ.length*100); S.preDone=true; render(); }
      break;
-   case "toMateri": S.status="EDUKASI"; syncRead(); S.screen="materi"; render(); break;
-   case "open": S.book=+d.id; S.screen="baca"; render(); break;
+   case "toTunggu": S.status="MENUNGGU_VERIFIKASI"; S.screen="tunggu"; render(); break;
+   case "open":
+     if(S.status==="PRETEST"||S.status==="MENUNGGU_VERIFIKASI"){ toast("Materi dapat dibaca setelah verifikasi wawancara SQ-FFQ."); return; }
+     S.book=+d.id; S.screen="baca"; render(); break;
    case "back": S.screen="materi"; render(); break;
    case "sec": var t=$("#sec-"+d.n); if(t)t.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"start"}); break;
    case "markRead":
-     if(!S.read[S.book]){ S.read[S.book]=true; syncRead(); S.screen="materi"; render(); toast("Buku "+S.book+" selesai dibaca"+(S.status==="MENUNGGU_VERIFIKASI"?". Semua materi wajib selesai.":".")); }
-     else { S.screen="materi"; render(); }
+     if(!S.read[S.book]){
+       S.read[S.book]=true; S.screen="materi"; render();
+       var rc=readCount();
+       if(S.status==="EDUKASI" && rc===BOOKS.length){
+         toast("Buku "+S.book+" selesai dibaca. Semua materi lengkap! Silakan klik 'Lanjut ke Beranda'.");
+       } else {
+         toast("Buku "+S.book+" selesai dibaca ("+rc+" dari "+BOOKS.length+").");
+       }
+     } else { S.screen="materi"; render(); }
      break;
-   case "toTunggu": S.screen="tunggu"; render(); break;
+   case "toBeranda":
+     if(readCount()===BOOKS.length){
+       S.status="TERVERIFIKASI"; S.screen="beranda"; render();
+       toast("Selamat datang di Beranda! Program 3 minggu sarapan resmi dimulai.");
+     } else {
+       toast("Wajib membaca kelima buku materi edukasi secara lengkap terlebih dahulu.");
+     }
+     break;
    case "cek":
      if(S.status==="TERVERIFIKASI"){S.screen="beranda";render();}
-     else toast("Belum terverifikasi. Petugas masih menyelesaikan SQ-FFQ.");
+     else if(S.status==="EDUKASI"){S.screen="materi";render();toast("SQ-FFQ sudah diverifikasi! Silakan baca kelima materi edukasi.");}
+     else toast("Belum terverifikasi. Petugas masih menyelesaikan wawancara SQ-FFQ.");
      break;
    case "pick": S.plan[d.k]=(S.plan[d.k]===d.v?null:d.v); S.plan.saved=false; render(); break;
    case "jam": S.plan.jam=d.v; render(); break;
@@ -705,7 +742,7 @@ document.addEventListener("click",function(ev){
    case "day": S.day=(S.day===+d.i?null:+d.i); render(); break;
    case "fill":
      S.form={nama:"Aisyah Putri",jk:"Perempuan",tgl:"14/03/2009",sekolah:"SMAN 1 Jakarta",email:"aisyah@email.com",sandi:"sarapan123",kelas:"XI IPA 2"}; S.errors={}; render(); break;
-   case "verify": if(S.status==="MENUNGGU_VERIFIKASI"){S.status="TERVERIFIKASI"; S.screen="beranda"; render(); toast("Petugas menyelesaikan SQ-FFQ. Akun terverifikasi.");} break;
+   case "verify": if(S.status==="MENUNGGU_VERIFIKASI"){S.status="EDUKASI"; S.screen="materi"; render(); toast("Petugas menyelesaikan SQ-FFQ. Silakan baca kelima materi edukasi sebelum masuk ke Beranda.");} break;
    case "reset": S=fresh(); render(); break;
   }
 });
